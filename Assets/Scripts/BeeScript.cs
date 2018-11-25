@@ -21,8 +21,9 @@ public class BeeScript : MonoBehaviour {
     {
         if (owner == GameManager.instance.myIndex)
         {
-            GameManager.instance.selectedArmy = gameObject;
-            GameManager.instance.selectDestination = true;
+            GameManager.instance.SelectArmy(gameObject);
+            //GameManager.instance.selectedArmy = gameObject;
+            //GameManager.instance.selectDestination = true;
         }
     }
 

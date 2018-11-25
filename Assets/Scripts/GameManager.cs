@@ -31,13 +31,12 @@ public class GameManager : MonoBehaviour {
 	
 	/* Game Field Holder */
     private Transform mapHolder;
+    private Transform paintHolder;
 	
 	/* GameObjects, prefabricated */
     public GameObject GrassTile;
     public GameObject TreeTile;
     public GameObject BeeTile;
-	public GameObject MoveToBeeTile;
-	public GameObject MoveToTreeTile;
 	public GameObject MoveToTile;
 	// Army Script object
 	public GameObject selectedArmy = null;
@@ -122,14 +121,6 @@ public class GameManager : MonoBehaviour {
             currentIndex++;
             currentIndex %= playerCount;
         }
-		
-		if (Input.GetButtonDown("Fire1") & myTurn & !paintOn) {
-			armyDestination = Camera.main.ScreenPointToRay(Input.mousePosition).origin;
-            paintX = (int)System.Math.Round(selectedArmy.transform.position.x / tileSize, 0);
-            paintY = (int)System.Math.Round(selectedArmy.transform.position.y / tileSize, 0);
-			paintMovePresentTile(paintX, paintY, true);
-			paintOn = true;
-		}
 	
         if (Input.GetButtonDown("Fire2") & myTurn & selectDestination)
         {
@@ -145,9 +136,7 @@ public class GameManager : MonoBehaviour {
                 destX < 0 | destY < 0 | destX > (columns - 1) | destY > (rows - 1) | (destX == locX & destY == locY))
             {
                 Debug.Log("Invalid move.");
-				if(paintOn)
-					;
-				else
+				if(!paintOn)
 					paintMovePresentTile(paintX, paintY, false);
 				
             }
@@ -213,11 +202,10 @@ public class GameManager : MonoBehaviour {
                 }
                 selectDestination = false;
 				paintOn = false;
+                selectedArmy = null;
             }
-			if(paintOn)
-					;
-				else
-					paintMovePresentTile(paintX, paintY, false);
+			if(!paintOn)
+				paintMovePresentTile(paintX, paintY, false);
         }
     }
 	
@@ -232,12 +220,25 @@ public class GameManager : MonoBehaviour {
 			return false;
 	}
 	
-	void paintMovePresentTile(int x, int y, bool maybe) {
+	void paintMovePresentTile(int x, int y, bool createTiles) {
+
+        // Destroy all move tiles
+        if (!createTiles)
+        {
+            foreach (Transform child in paintHolder.transform)
+            {
+                GameObject.Destroy(child.gameObject);
+            }
+            return;
+        }
+
+        // Calculate positions for possible moves and create tiles
 		int a = x + maxMoveDistance + 1;
 		int b = y + maxMoveDistance + 1;
 		int c = x - maxMoveDistance;
 		int d = y - maxMoveDistance;
-		if(a > 20)
+
+        if (a > 20)
 			a = 20;
 		if(b > 20)
 			b = 20;
@@ -245,55 +246,40 @@ public class GameManager : MonoBehaviour {
 			c = 0;
 		if(d < 0)
 			d = 0;
+        int startD = d;
 		while(c < a) {
 			while(d < b) {
-				if(x == c && y == d)
-					;
-				else {
-					if(maybe)
-						makeTempTile(c,d);
-					else
-						removeTempTile(c,d);
+                if (!(x == c && y == d))
+                {
+                    makeTempTile(c, d);
 				}
 				++d;
 			}
-			d = y - maxMoveDistance;
+            d = startD;
 		++c;
 		}
-	}
+    }
 	
 	void makeTempTile(int x, int y) {
 		
-		Debug.Log("MakeTempTile");
+		//Debug.Log("MakeTempTile to: x: "+x+ " y: "+y);
 		GameObject instance;
-		GameObject toInstantiateGrass = MoveToTile;
-		GameObject toInstantiateTree = MoveToTreeTile;
-		GameObject toInstantiateBee = MoveToBeeTile;
+		GameObject toInstantiateTile = MoveToTile;
+
 		{
 			//Instantiate the GameObject instance using the prefab chosen for toInstantiate at the Vector3 corresponding to current grid position in loop, cast it to GameObject.
-			Debug.Log("MakeTempTile1");
-			if(cTreePosit(x,y)) // test if tree / bee here, apply bee/tree tile based on it.
-			{
-				instance = Instantiate(toInstantiateTree, new Vector3(x * tileSize, y * tileSize, -2f), Quaternion.identity) as GameObject;
-				Debug.Log("MakeTempTile1_1");
-			}
-			else if(cBeePosit(x,y)	) {
-				instance = Instantiate(toInstantiateBee, new Vector3(x * tileSize, y * tileSize, -2f), Quaternion.identity) as GameObject;
-				Debug.Log("MakeTempTile1_2");
-			}
-			else {
-				instance = Instantiate(toInstantiateGrass, new Vector3(x * tileSize, y * tileSize, -2f), Quaternion.identity) as GameObject;	
-				Debug.Log("MakeTempTile1_3");
-			}
+
+			instance = Instantiate(toInstantiateTile, new Vector3(x * tileSize, y * tileSize, -2f), Quaternion.identity) as GameObject;
+
 			//Set the parent of our newly instantiated object instance to boardHolder, this is just organizational to avoid cluttering hierarchy.
 			//mapHolder = new GameObject("Overlay").transform;
-			instance.transform.SetParent(mapHolder);
-			tiles[x][y].paintTile = instance;
+			instance.transform.SetParent(paintHolder);
+			//tiles[x][y].paintTile = instance;
 		}
 	}
 	
 	void removeTempTile(int x, int y) {
-		//Debug.Log("DestroyTempTile1_3");
+		Debug.Log("DestroyTempTile1_3");
 		Destroy(tiles[x][y].paintTile);
 		
 	}
@@ -302,6 +288,7 @@ public class GameManager : MonoBehaviour {
     void MapSetup()
     {
         mapHolder = new GameObject("Map").transform;
+        paintHolder = new GameObject("MoveTiles").transform;
 
         for (int x = 0; x < columns; x++)
         {
@@ -376,4 +363,31 @@ public class GameManager : MonoBehaviour {
 			IncreaseBeeCount(1);
 			turnCount = turnCount + 1;
 	}
+
+    public void SelectArmy(GameObject army)
+    {
+        if (army == selectedArmy)
+        {
+            Debug.Log("Same army selected");
+        }
+        else
+        {
+            if (paintOn)
+            {
+                paintMovePresentTile(0, 0, false);
+                paintOn = false;
+            }
+            instance.selectedArmy = army;
+            instance.selectDestination = true;
+            if (myTurn & !paintOn)
+            {
+                armyDestination = Camera.main.ScreenPointToRay(Input.mousePosition).origin;
+                paintX = (int)System.Math.Round(selectedArmy.transform.position.x / tileSize, 0);
+                paintY = (int)System.Math.Round(selectedArmy.transform.position.y / tileSize, 0);
+                paintMovePresentTile(paintX, paintY, true);
+                paintOn = true;
+            }
+            Debug.Log("Different army selected");
+        }
+    }
 }
