@@ -140,12 +140,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4efa701e80d0c62478dc494bf34f6093, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  turnCount: 0
   columns: 20
   rows: 20
   GrassTile: {fileID: 1465514368158164, guid: c7fecadefaabd694aa93f848f656ff4e, type: 2}
   TreeTile: {fileID: 1521318320213416, guid: 0e9a0a7747ab84f408bb75888b738a40, type: 2}
   BeeTile: {fileID: 1017288910471986, guid: c90284c50dbbfec4fb208492a954fbaa, type: 2}
+  MoveToTile: {fileID: 1465514368158164, guid: 45b24546ec3b15446b41a596ccf1a5ab, type: 2}
   selectedArmy: {fileID: 0}
+  paintOn: 0
   tileSize: 0.32
   selectDestination: 0
   myIndex: 0
