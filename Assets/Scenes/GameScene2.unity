@@ -149,7 +149,7 @@ MonoBehaviour:
   MoveToTile: {fileID: 1465514368158164, guid: 45b24546ec3b15446b41a596ccf1a5ab, type: 2}
   selectedArmy: {fileID: 0}
   paintOn: 0
-  tileSize: 0.32
+  tileSize: 1.28
   selectDestination: 0
   myIndex: 0
   currentIndex: 0
@@ -219,9 +219,9 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 1000
-  field of view: 60
+  field of view: 105
   orthographic: 1
-  orthographic size: 3.3
+  orthographic size: 13
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -244,7 +244,7 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1048103138}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 3.04, y: 3.04, z: -10}
+  m_LocalPosition: {x: 15, y: 12, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
