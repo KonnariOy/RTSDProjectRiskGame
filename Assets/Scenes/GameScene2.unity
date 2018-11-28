@@ -141,11 +141,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   turnCount: 0
-  columns: 20
-  rows: 20
+  columns: 12
+  rows: 12
   GrassTile: {fileID: 1465514368158164, guid: c7fecadefaabd694aa93f848f656ff4e, type: 2}
   TreeTile: {fileID: 1521318320213416, guid: 0e9a0a7747ab84f408bb75888b738a40, type: 2}
-  BeeTile: {fileID: 1017288910471986, guid: c90284c50dbbfec4fb208492a954fbaa, type: 2}
+  BeeTile: {fileID: 1392988203598926, guid: d84a3a6d7f36eb24aabc54600d618f36, type: 2}
   MoveToTile: {fileID: 1465514368158164, guid: 45b24546ec3b15446b41a596ccf1a5ab, type: 2}
   selectedArmy: {fileID: 0}
   paintOn: 0
@@ -221,7 +221,7 @@ Camera:
   far clip plane: 1000
   field of view: 105
   orthographic: 1
-  orthographic size: 13
+  orthographic size: 8
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -244,7 +244,7 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1048103138}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 15, y: 12, z: -10}
+  m_LocalPosition: {x: 7, y: 7, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}

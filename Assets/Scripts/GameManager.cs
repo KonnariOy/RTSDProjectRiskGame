@@ -42,8 +42,8 @@ public class GameManager : MonoBehaviour {
 	public GameObject selectedArmy = null;
 	
 	/* Coordinates */
-    int[,] treePos = { { 0, 3 }, { 11, 10 }, { 19, 14 }, { 5, 8 } };
-    int[,] beePos = { { 10, 10 }, {12, 12} , { 19, 14 }, { 6, 8 } };
+    int[,] treePos = { { 0, 3 }, { 11, 10 }, { 8, 8 }, { 3, 8 } };
+    int[,] beePos = { { 10, 10 }, {11, 11} , { 7, 4 }, { 6, 10 } };
     int[] beeOwners = { 0, 0, 1, 3 };
 	int[] treeOwners = { 0, 0, 1 };
 	
@@ -238,10 +238,10 @@ public class GameManager : MonoBehaviour {
 		int c = x - maxMoveDistance;
 		int d = y - maxMoveDistance;
 
-        if (a > 20)
-			a = 20;
-		if(b > 20)
-			b = 20;
+        if (a > columns)
+			a = columns;
+		if(b > rows)
+			b = rows;
 		if(c < 0)
 			c = 0;
 		if(d < 0)
@@ -265,8 +265,11 @@ public class GameManager : MonoBehaviour {
 		//Debug.Log("MakeTempTile to: x: "+x+ " y: "+y);
 		GameObject instance;
 		GameObject toInstantiateTile = MoveToTile;
+        Color tmpColor = playerColors[myIndex];
+        tmpColor.a = 0.4f;
+        MoveToTile.GetComponent<SpriteRenderer>().color = tmpColor;
 
-		{
+        {
 			//Instantiate the GameObject instance using the prefab chosen for toInstantiate at the Vector3 corresponding to current grid position in loop, cast it to GameObject.
 
 			instance = Instantiate(toInstantiateTile, new Vector3(x * tileSize, y * tileSize, -2f), Quaternion.identity) as GameObject;
@@ -332,7 +335,10 @@ public class GameManager : MonoBehaviour {
                 tiles[beePos[i, 0]][beePos[i, 1]].beeObject = instance;
                 tiles[beePos[i, 0]][beePos[i, 1]].owner = beeOwners[i];
                 instance.GetComponent<BeeScript>().owner = beeOwners[i];
-                instance.GetComponent<BeeScript>().countText.color = playerColors[beeOwners[i]];
+                //instance.GetComponent<BeeScript>().countText.color = playerColors[beeOwners[i]];
+                Color tmpColor = playerColors[beeOwners[i]];
+                tmpColor.a = 0.5f;
+                instance.GetComponent<BeeScript>().playerSprite.color = tmpColor;
             }
         }
     }

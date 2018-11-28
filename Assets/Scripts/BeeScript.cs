@@ -8,6 +8,7 @@ public class BeeScript : MonoBehaviour {
     public int count = 10;
     public int owner;
     public Text countText;
+    public SpriteRenderer playerSprite;
     // Use this for initialization
     void Start () {
         
