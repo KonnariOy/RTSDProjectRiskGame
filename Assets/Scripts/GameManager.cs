@@ -20,6 +20,36 @@ public class GameManager : MonoBehaviour {
         }
     }
 
+    public class Player
+    {
+        public string name = "Default player";
+
+        public Player(string _name)
+        {
+            name = _name;
+        }
+    }
+
+    public class Move
+    {
+        public int player;
+        public int fromX;
+        public int fromY;
+        public int toX;
+        public int toY;
+        public int beeCount;
+
+        public Move(int index, int fX, int fY, int tX, int tY, int bees)
+        {
+            player = index;
+            fromX = fX;
+            fromY = fY;
+            toX = tX;
+            toY = tY;
+            beeCount = bees;
+        }
+    }
+
 	/* Game Values */
 	
 	public int turnCount = 0;
@@ -28,7 +58,8 @@ public class GameManager : MonoBehaviour {
     public int rows = 20;
     public static GameManager instance = null;              //Static instance of GameManager which allows it to be accessed by any other script.
     private StartGame startScript;
-	
+    public Player player = new Player("Local player 2");
+
 	/* Game Field Holder */
     private Transform mapHolder;
     private Transform paintHolder;
@@ -53,8 +84,9 @@ public class GameManager : MonoBehaviour {
 	int paintX;
 	int paintY;
 	public bool paintOn = false;
-	
-	/* Game Logic */
+
+    /* Game Logic */
+    public bool MapInitialized = false;
 	private bool myTurn = false;
     public float tileSize = 0.32f;
     private Vector3 armyDestination;
@@ -62,8 +94,9 @@ public class GameManager : MonoBehaviour {
     private readonly int maxMoveDistance = 3;
     public int myIndex = 0;
     public int currentIndex = 0;
-    public int playerCount = 4;
-    public Color[] playerColors = { new Color(0f, 0.4f, 1f), new Color(1f, 0f, 0f), new Color(1f, 0f, 0f), new Color(1f, 0f, 0f) };
+    public JSONObject players;
+    public JSONObject map;
+    public Color[] playerColors = { new Color(0f, 0.4f, 1f), new Color(1f, 0f, 0f), new Color(0f, 1f, 0f), new Color(1f, 0f, 0f), new Color(1f, 1f, 0f), new Color(1f, 1f, 1f) };
     public int maxBeeCount = 40;
 
     public List<List<Tile>> tiles;
@@ -98,15 +131,19 @@ public class GameManager : MonoBehaviour {
 
     void InitGame()
     {
+        players = new JSONObject();
+        map = new JSONObject();
         tiles = new List<List<Tile>>();
-        MapSetup();
+        //MapSetup();
     }
 
     // Update is called once per frame
     void Update()
     {
-		
-		bool moveToDestination = false;
+		if (!MapInitialized)
+        {
+            return;
+        }
 		
         if (!myTurn & currentIndex == myIndex)
         {
@@ -116,10 +153,11 @@ public class GameManager : MonoBehaviour {
         }
         if (!myTurn)
         {
+            return;
             Debug.Log("Turn of player " + currentIndex);
             IncreaseBeeCount(currentIndex);
             currentIndex++;
-            currentIndex %= playerCount;
+            currentIndex %= players.Count;
         }
 	
         if (Input.GetButtonDown("Fire2") & myTurn & selectDestination)
@@ -142,64 +180,7 @@ public class GameManager : MonoBehaviour {
             }
             else
             {
-				
-                tiles[locX][locY].bees = 0;
-                moveToDestination = true;
-                if (tiles[destX][destY].bees > 0)
-                {
-                    if (tiles[destX][destY].owner == myIndex)
-                    {
-                        // Combine the 2 friendly bee armies
-                        tiles[destX][destY].bees += selectedArmy.GetComponent<BeeScript>().count;
-                        tiles[destX][destY].beeObject.GetComponent<BeeScript>().AddCount(selectedArmy.GetComponent<BeeScript>().count);
-                        Destroy(selectedArmy);
-                        moveToDestination = false;
-                    }
-                    else
-                    {
-                        // The 2 bee armies fight
-                        int result = selectedArmy.GetComponent<BeeScript>().count - tiles[destX][destY].bees;
-                        if (result > 0)
-                        {
-                            Debug.Log("Attacker won.");
-                            Destroy(tiles[destX][destY].beeObject);
-                            selectedArmy.GetComponent<BeeScript>().SetCount(result);
-                        }
-                        else if (result < 0)
-                        {
-                            Debug.Log("Defender won.");
-                            Destroy(selectedArmy);
-                            tiles[destX][destY].beeObject.GetComponent<BeeScript>().SetCount(-result);
-                            tiles[destX][destY].bees = -result;
-                            moveToDestination = false;
-                        }
-                        else
-                        {
-                            Debug.Log("Mutual wipe out.");
-                            Destroy(tiles[destX][destY].beeObject);
-                            Destroy(selectedArmy);
-                            tiles[destX][destY].bees = 0;
-                            moveToDestination = false;
-                        }
-                    }
-                }
-                if (moveToDestination)
-                {
-                    // Move selected army to destination and update tile list
-                    tiles[destX][destY].owner = myIndex;
-                    tiles[destX][destY].beeObject = selectedArmy;
-                    tiles[destX][destY].bees = selectedArmy.GetComponent<BeeScript>().count;
-                    tiles[locX][locY].beeObject = null;
-                    tiles[locX][locY].bees = 0;
-                    armyDestination.x = tileSize * (float)System.Math.Round(armyDestination.x / tileSize, 0);
-                    armyDestination.y = tileSize * (float)System.Math.Round(armyDestination.y / tileSize, 0);
-                    armyDestination.z = 0;
-                    selectedArmy.transform.position = armyDestination;
-                    currentIndex++;
-                    currentIndex %= playerCount;
-                    myTurn = false;
-					
-                }
+                NetworkManager.instance.MakeMove(new Move(myIndex,locX,locY,destX,destY,selectedArmy.GetComponent<BeeScript>().count));
                 selectDestination = false;
 				paintOn = false;
                 selectedArmy = null;
@@ -306,7 +287,7 @@ public class GameManager : MonoBehaviour {
 
                 //Set the parent of our newly instantiated object instance to boardHolder, this is just organizational to avoid cluttering hierarchy.
                 instance.transform.SetParent(mapHolder);
-                tiles[x].Add(new Tile(false,0,0));
+                tiles[x].Add(new Tile(false,-1,0));
             }
         }
         for (int i = 0; i < treePos.Length/2; i++)
@@ -343,6 +324,141 @@ public class GameManager : MonoBehaviour {
         }
     }
 
+    //Creates the map
+    public void NetworkMapSetup()
+    {
+        mapHolder = new GameObject("Map").transform;
+        paintHolder = new GameObject("MoveTiles").transform;
+        int index = 0;
+        for (int x = 0; x < columns; x++)
+        {
+            tiles.Add(new List<Tile>());
+            for (int y = 0; y < rows; y++)
+            {
+                //int.Parse(socketIOevent.data["columns"].ToString()
+                GameObject toInstantiate = GrassTile;
+
+                //Instantiate the GameObject instance using the prefab chosen for toInstantiate at the Vector3 corresponding to current grid position in loop, cast it to GameObject.
+                GameObject instance =
+                    Instantiate(toInstantiate, new Vector3(x * tileSize, y * tileSize, 0f), Quaternion.identity) as GameObject;
+
+                //Set the parent of our newly instantiated object instance to boardHolder, this is just organizational to avoid cluttering hierarchy.
+                instance.transform.SetParent(mapHolder);
+                tiles[x].Add(new Tile(false, -1, 0));
+
+                if(int.Parse(map[index]["hasTree"].ToString()) == 1)
+                {
+                    Debug.Log("There is a tree at x: " + x + " y: " + y);
+                    GameObject treeToInstantiate = TreeTile;
+                    {
+                        //Instantiate the GameObject instance using the prefab chosen for toInstantiate at the Vector3 corresponding to current grid position in loop, cast it to GameObject.
+                        GameObject treeInstance =
+                            Instantiate(treeToInstantiate, new Vector3(x * tileSize, y * tileSize, 0f), Quaternion.identity) as GameObject;
+
+                        //Set the parent of our newly instantiated object instance to boardHolder, this is just organizational to avoid cluttering hierarchy.
+                        treeInstance.transform.SetParent(mapHolder);
+                        tiles[x][y].hasTree = true;
+                    }
+                }
+
+                int owner = int.Parse(map[index]["owner"].ToString());
+                int bees = int.Parse(map[index]["bees"].ToString());
+                if (owner != -1 && bees > 0)
+                {
+                    Debug.Log("Creating bee:" + map[index].ToString());
+                    GameObject beeToInstantiate = BeeTile;
+                    {
+                        //Instantiate the GameObject instance using the prefab chosen for toInstantiate at the Vector3 corresponding to current grid position in loop, cast it to GameObject.
+                        GameObject beeInstance =
+                            Instantiate(beeToInstantiate, new Vector3(x * tileSize, y * tileSize, 0f), Quaternion.identity) as GameObject;
+                        //Set the parent of our newly instantiated object instance to boardHolder, this is just organizational to avoid cluttering hierarchy.
+                        tiles[x][y].bees = bees;
+                        tiles[x][y].beeObject = beeInstance;
+                        tiles[x][y].owner = owner;
+                        beeInstance.GetComponent<BeeScript>().owner = owner;
+                        beeInstance.GetComponent<BeeScript>().SetCount(bees);
+                        Color tmpColor = playerColors[owner];
+                        tmpColor.a = 0.5f;
+                        beeInstance.GetComponent<BeeScript>().playerSprite.color = tmpColor;
+                    }
+                }
+
+                index++;
+            }
+        }
+        MapInitialized = true;
+    }
+
+    public void UpdateMapFromServer()
+    {
+        int index = 0;
+        for (int x = 0; x < columns; x++)
+        {
+            for (int y = 0; y < rows; y++)
+            {
+                //if tiles[x][y].bees !=
+                //if tiles[x][y].owner !=
+                index++;
+            }
+        }
+    }
+
+    public void PlayMoveFromServer(JSONObject moveData)
+    {
+        JSONObject move = moveData["tiles"];
+        for (int i = 0; i < move.Count; i++)
+        {
+            int index = int.Parse(move.keys[i]);
+            int xIndex = index / columns;
+            int yIndex = index - xIndex * columns;
+            Debug.Log("x: " + xIndex + " y: " + yIndex);
+            int newOwner = int.Parse(move[move.keys[i]]["owner"].ToString());
+            int newBeeCount = int.Parse(move[move.keys[i]]["bees"].ToString());
+
+            Debug.Log("x: " + xIndex + " y: " + yIndex + " owner: " + tiles[xIndex][yIndex].owner + " new owner: " + newOwner);
+
+            if (tiles[xIndex][yIndex].owner != newOwner)
+            {
+                Debug.Log("Owner changed.");
+                Destroy(tiles[xIndex][yIndex].beeObject);
+
+                tiles[xIndex][yIndex].owner = newOwner;
+
+                if (newOwner != -1)
+                {
+                    GameObject beeToInstantiate = BeeTile;
+                    //Instantiate the GameObject instance using the prefab chosen for toInstantiate at the Vector3 corresponding to current grid position in loop, cast it to GameObject.
+                    GameObject beeInstance =
+                        Instantiate(beeToInstantiate, new Vector3(xIndex * tileSize, yIndex * tileSize, 0f), Quaternion.identity) as GameObject;
+                    //Set the parent of our newly instantiated object instance to boardHolder, this is just organizational to avoid cluttering hierarchy.
+                    tiles[xIndex][yIndex].beeObject = beeInstance;
+                    beeInstance.GetComponent<BeeScript>().owner = newOwner;
+
+                    Color tmpColor = playerColors[newOwner];
+                    tmpColor.a = 0.5f;
+                    beeInstance.GetComponent<BeeScript>().playerSprite.color = tmpColor;
+                }
+            }
+
+            if (tiles[xIndex][yIndex].bees != newBeeCount)
+            {
+                Debug.Log("Beecount changed.");
+                tiles[xIndex][yIndex].beeObject.GetComponent<BeeScript>().SetCount(newBeeCount);
+            }
+        }
+
+        currentIndex = int.Parse(moveData["turnIndex"].ToString());
+        if (currentIndex == myIndex)
+        {
+            myTurn = true;
+        }
+        else
+        {
+            myTurn = false;
+        }
+    }
+
+
     public void SelectBee(GameObject bee)
     {
         Debug.Log(bee);
@@ -372,6 +488,10 @@ public class GameManager : MonoBehaviour {
 
     public void SelectArmy(GameObject army)
     {
+        if (!myTurn)
+        {
+            return;
+        }
         if (army == selectedArmy)
         {
             Debug.Log("Same army selected");
