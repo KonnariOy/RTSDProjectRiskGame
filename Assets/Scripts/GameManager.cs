@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour {
 
@@ -28,6 +29,12 @@ public class GameManager : MonoBehaviour {
     public int rows = 20;
     public static GameManager instance = null;              //Static instance of GameManager which allows it to be accessed by any other script.
     private StartGame startScript;
+	
+	/* Game UI */
+	
+	//public GameObject CanvasUI;
+	public GameObject buttonPassTurn;
+	public GameObject imageWhosTurn;
 	
 	/* Game Field Holder */
     private Transform mapHolder;
@@ -63,8 +70,11 @@ public class GameManager : MonoBehaviour {
     public int myIndex = 0;
     public int currentIndex = 0;
     public int playerCount = 4;
+	public int currentPlayer = 1;
     public Color[] playerColors = { new Color(0f, 0.4f, 1f), new Color(1f, 0f, 0f), new Color(1f, 0f, 0f), new Color(1f, 0f, 0f) };
+	public Color32[] playerTurnColors = { new Color32(255, 255, 0, 100), new Color32(255, 0, 255, 100), new Color32(0, 255, 0, 100), new Color32(255, 0, 0, 100) };
     public int maxBeeCount = 40;
+	public bool passTurn = false;
 
     public List<List<Tile>> tiles;
 
@@ -100,6 +110,7 @@ public class GameManager : MonoBehaviour {
     {
         tiles = new List<List<Tile>>();
         MapSetup();
+		UISetup();
     }
 
     // Update is called once per frame
@@ -107,7 +118,7 @@ public class GameManager : MonoBehaviour {
     {
 		
 		bool moveToDestination = false;
-		
+		/*
         if (!myTurn & currentIndex == myIndex)
         {
             Debug.Log("Your turn.");
@@ -120,9 +131,9 @@ public class GameManager : MonoBehaviour {
             IncreaseBeeCount(currentIndex);
             currentIndex++;
             currentIndex %= playerCount;
-        }
+        }*/
 	
-        if (Input.GetButtonDown("Fire2") & myTurn & selectDestination)
+        if (Input.GetButtonDown("Fire2") & selectDestination) // myTurn
         {
             armyDestination = Camera.main.ScreenPointToRay(Input.mousePosition).origin;
 			
@@ -195,10 +206,10 @@ public class GameManager : MonoBehaviour {
                     armyDestination.y = tileSize * (float)System.Math.Round(armyDestination.y / tileSize, 0);
                     armyDestination.z = 0;
                     selectedArmy.transform.position = armyDestination;
-                    currentIndex++;
-                    currentIndex %= playerCount;
+                    /*currentIndex++;
+                    currentIndex %= playerCount;*/
                     myTurn = false;
-					
+					passTurn = true;
                 }
                 selectDestination = false;
 				paintOn = false;
@@ -206,6 +217,16 @@ public class GameManager : MonoBehaviour {
             }
 			if(!paintOn)
 				paintMovePresentTile(paintX, paintY, false);
+			if(passTurn) {
+				passTurn = false;
+				if(currentIndex >= playerCount)
+					currentIndex = 0;
+				else
+					++currentPlayer;
+				imageWhosTurn.GetComponent<Image>().color = playerTurnColors[currentIndex];
+				Debug.Log("SwitchTurn" + currentIndex + 1);
+				IncreaseBeeCount(currentIndex);
+			}
         }
     }
 	
@@ -265,7 +286,7 @@ public class GameManager : MonoBehaviour {
 		//Debug.Log("MakeTempTile to: x: "+x+ " y: "+y);
 		GameObject instance;
 		GameObject toInstantiateTile = MoveToTile;
-        Color tmpColor = playerColors[myIndex];
+        Color tmpColor = playerColors[currentIndex]; //myIndex
         tmpColor.a = 0.4f;
         MoveToTile.GetComponent<SpriteRenderer>().color = tmpColor;
 
@@ -342,6 +363,17 @@ public class GameManager : MonoBehaviour {
             }
         }
     }
+	
+	void UISetup() 
+	{
+
+		//CanvasUI = GameObject.FindGameObjectWithTag("CanvasUI");
+		imageWhosTurn = GameObject.Find("ImageWhosTurn"); //      buttonPassTurn;
+		buttonPassTurn = GameObject.Find("ButtonPassTurn");
+		imageWhosTurn.GetComponent<Image>().color = playerTurnColors[currentPlayer];
+		buttonPassTurn.GetComponent<Button>().onClick.AddListener(turnPass);
+
+	}
 
     public void SelectBee(GameObject bee)
     {
@@ -366,7 +398,7 @@ public class GameManager : MonoBehaviour {
 	
 	public void turnChange() 
 	{
-			IncreaseBeeCount(1);
+			IncreaseBeeCount(currentIndex);
 			turnCount = turnCount + 1;
 	}
 
@@ -396,4 +428,10 @@ public class GameManager : MonoBehaviour {
             Debug.Log("Different army selected");
         }
     }
+	
+	public void turnPass() {
+		Debug.Log("New Player Turn " + currentPlayer);
+		passTurn = true;
+		turnChange();
+	}
 }
