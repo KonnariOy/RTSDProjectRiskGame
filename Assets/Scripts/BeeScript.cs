@@ -20,7 +20,7 @@ public class BeeScript : MonoBehaviour {
 
     void OnMouseDown()
     {
-        if (owner == GameManager.instance.myIndex)
+        if (owner == GameManager.instance.currentIndex) // myIndex
         {
             GameManager.instance.SelectArmy(gameObject);
             //GameManager.instance.selectedArmy = gameObject;

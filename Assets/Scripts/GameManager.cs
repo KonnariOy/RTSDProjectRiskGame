@@ -19,6 +19,11 @@ public class GameManager : MonoBehaviour {
             owner = own;
             bees = bee;
         }
+		
+		public int whoseBee() 
+		{
+			return owner;
+		}
     }
 
 	/* Game Values */
@@ -35,6 +40,7 @@ public class GameManager : MonoBehaviour {
 	//public GameObject CanvasUI;
 	public GameObject buttonPassTurn;
 	public GameObject imageWhosTurn;
+	public GameObject imageWhoseTurnText;
 	
 	/* Game Field Holder */
     private Transform mapHolder;
@@ -70,7 +76,6 @@ public class GameManager : MonoBehaviour {
     public int myIndex = 0;
     public int currentIndex = 0;
     public int playerCount = 4;
-	public int currentPlayer = 1;
     public Color[] playerColors = { new Color(0f, 0.4f, 1f), new Color(1f, 0f, 0f), new Color(1f, 0f, 0f), new Color(1f, 0f, 0f) };
 	public Color32[] playerTurnColors = { new Color32(255, 255, 0, 100), new Color32(255, 0, 255, 100), new Color32(0, 255, 0, 100), new Color32(255, 0, 0, 100) };
     public int maxBeeCount = 40;
@@ -113,6 +118,19 @@ public class GameManager : MonoBehaviour {
 		UISetup();
     }
 
+		
+	void TurnChange() 
+	{
+			IncreaseBeeCount(currentIndex);
+			turnCount = turnCount + 1;
+			currentIndex++;
+			if(currentIndex >= playerCount)
+				currentIndex = 0;
+			imageWhosTurn.GetComponent<Image>().color = playerTurnColors[currentIndex];
+			imageWhoseTurnText.GetComponent<Text>().text = "Whose turn: " + (currentIndex + 1);
+			Debug.Log("SwitchTurn" + (currentIndex + 1));
+	}
+	
     // Update is called once per frame
     void Update()
     {
@@ -142,6 +160,7 @@ public class GameManager : MonoBehaviour {
             int destY = (int)System.Math.Round(armyDestination.y / tileSize, 0);
             int locX = (int)System.Math.Round(selectedArmy.transform.position.x / tileSize, 0);
             int locY = (int)System.Math.Round(selectedArmy.transform.position.y / tileSize, 0);
+			Debug.Log(destX + " " + destY + " " + locX + " " + locY);
 			
             if (System.Math.Abs(destX - locX) > maxMoveDistance | System.Math.Abs(destY - locY) > maxMoveDistance |
                 destX < 0 | destY < 0 | destX > (columns - 1) | destY > (rows - 1) | (destX == locX & destY == locY))
@@ -153,79 +172,75 @@ public class GameManager : MonoBehaviour {
             }
             else
             {
-				
-                tiles[locX][locY].bees = 0;
-                moveToDestination = true;
-                if (tiles[destX][destY].bees > 0)
-                {
-                    if (tiles[destX][destY].owner == myIndex)
-                    {
-                        // Combine the 2 friendly bee armies
-                        tiles[destX][destY].bees += selectedArmy.GetComponent<BeeScript>().count;
-                        tiles[destX][destY].beeObject.GetComponent<BeeScript>().AddCount(selectedArmy.GetComponent<BeeScript>().count);
-                        Destroy(selectedArmy);
-                        moveToDestination = false;
-                    }
-                    else
-                    {
-                        // The 2 bee armies fight
-                        int result = selectedArmy.GetComponent<BeeScript>().count - tiles[destX][destY].bees;
-                        if (result > 0)
-                        {
-                            Debug.Log("Attacker won.");
-                            Destroy(tiles[destX][destY].beeObject);
-                            selectedArmy.GetComponent<BeeScript>().SetCount(result);
-                        }
-                        else if (result < 0)
-                        {
-                            Debug.Log("Defender won.");
-                            Destroy(selectedArmy);
-                            tiles[destX][destY].beeObject.GetComponent<BeeScript>().SetCount(-result);
-                            tiles[destX][destY].bees = -result;
-                            moveToDestination = false;
-                        }
-                        else
-                        {
-                            Debug.Log("Mutual wipe out.");
-                            Destroy(tiles[destX][destY].beeObject);
-                            Destroy(selectedArmy);
-                            tiles[destX][destY].bees = 0;
-                            moveToDestination = false;
-                        }
-                    }
-                }
-                if (moveToDestination)
-                {
-                    // Move selected army to destination and update tile list
-                    tiles[destX][destY].owner = myIndex;
-                    tiles[destX][destY].beeObject = selectedArmy;
-                    tiles[destX][destY].bees = selectedArmy.GetComponent<BeeScript>().count;
-                    tiles[locX][locY].beeObject = null;
-                    tiles[locX][locY].bees = 0;
-                    armyDestination.x = tileSize * (float)System.Math.Round(armyDestination.x / tileSize, 0);
-                    armyDestination.y = tileSize * (float)System.Math.Round(armyDestination.y / tileSize, 0);
-                    armyDestination.z = 0;
-                    selectedArmy.transform.position = armyDestination;
-                    /*currentIndex++;
-                    currentIndex %= playerCount;*/
-                    myTurn = false;
-					passTurn = true;
-                }
-                selectDestination = false;
-				paintOn = false;
-                selectedArmy = null;
+				Debug.Log("I " + tiles[locX][locY].whoseBee() + " " + currentIndex);
+				if((tiles[locX][locY].whoseBee() == currentIndex)) {
+					moveToDestination = true;
+					tiles[locX][locY].bees = 0;
+					if (tiles[destX][destY].bees > 0)
+					{
+						if (tiles[destX][destY].owner == currentIndex) // myIndex
+						{
+							// Combine the 2 friendly bee armies
+							tiles[destX][destY].bees += selectedArmy.GetComponent<BeeScript>().count;
+							tiles[destX][destY].beeObject.GetComponent<BeeScript>().AddCount(selectedArmy.GetComponent<BeeScript>().count);
+							Destroy(selectedArmy);
+							moveToDestination = false;
+						}
+						else
+						{
+							// The 2 bee armies fight
+							int result = selectedArmy.GetComponent<BeeScript>().count - tiles[destX][destY].bees;
+							if (result > 0)
+							{
+								Debug.Log("Attacker won.");
+								Destroy(tiles[destX][destY].beeObject);
+								selectedArmy.GetComponent<BeeScript>().SetCount(result);
+							}
+							else if (result < 0)
+							{
+								Debug.Log("Defender won.");
+								Destroy(selectedArmy);
+								tiles[destX][destY].beeObject.GetComponent<BeeScript>().SetCount(-result);
+								tiles[destX][destY].bees = -result;
+								moveToDestination = false;
+							}
+							else
+							{
+								Debug.Log("Mutual wipe out.");
+								Destroy(tiles[destX][destY].beeObject);
+								Destroy(selectedArmy);
+								tiles[destX][destY].bees = 0;
+								moveToDestination = false;
+							}
+						}
+					}
+					if (moveToDestination)
+					{
+						// Move selected army to destination and update tile list
+						tiles[destX][destY].owner = currentIndex; //myIndex;
+						tiles[destX][destY].beeObject = selectedArmy;
+						tiles[destX][destY].bees = selectedArmy.GetComponent<BeeScript>().count;
+						tiles[locX][locY].beeObject = null;
+						tiles[locX][locY].bees = 0;
+						armyDestination.x = tileSize * (float)System.Math.Round(armyDestination.x / tileSize, 0);
+						armyDestination.y = tileSize * (float)System.Math.Round(armyDestination.y / tileSize, 0);
+						armyDestination.z = 0;
+						selectedArmy.transform.position = armyDestination;
+						/*currentIndex++;
+						currentIndex %= playerCount;*/
+						//myTurn = false;
+						passTurn = true;
+					}
+					selectDestination = false;
+					paintOn = false;
+				}
+				selectedArmy = null;
             }
 			if(!paintOn)
 				paintMovePresentTile(paintX, paintY, false);
 			if(passTurn) {
 				passTurn = false;
-				if(currentIndex >= playerCount)
-					currentIndex = 0;
-				else
-					++currentPlayer;
-				imageWhosTurn.GetComponent<Image>().color = playerTurnColors[currentIndex];
-				Debug.Log("SwitchTurn" + currentIndex + 1);
-				IncreaseBeeCount(currentIndex);
+				TurnChange();
 			}
         }
     }
@@ -369,8 +384,9 @@ public class GameManager : MonoBehaviour {
 
 		//CanvasUI = GameObject.FindGameObjectWithTag("CanvasUI");
 		imageWhosTurn = GameObject.Find("ImageWhosTurn"); //      buttonPassTurn;
+		imageWhoseTurnText = GameObject.Find("ImageWhoseTurnText"); //      buttonPassTurn;
 		buttonPassTurn = GameObject.Find("ButtonPassTurn");
-		imageWhosTurn.GetComponent<Image>().color = playerTurnColors[currentPlayer];
+		imageWhosTurn.GetComponent<Image>().color = playerTurnColors[currentIndex];
 		buttonPassTurn.GetComponent<Button>().onClick.AddListener(turnPass);
 
 	}
@@ -395,43 +411,47 @@ public class GameManager : MonoBehaviour {
             }
         }
     }
-	
-	public void turnChange() 
-	{
-			IncreaseBeeCount(currentIndex);
-			turnCount = turnCount + 1;
-	}
 
     public void SelectArmy(GameObject army)
     {
-        if (army == selectedArmy)
-        {
-            Debug.Log("Same army selected");
-        }
-        else
-        {
-            if (paintOn)
-            {
-                paintMovePresentTile(0, 0, false);
-                paintOn = false;
-            }
-            instance.selectedArmy = army;
-            instance.selectDestination = true;
-            if (myTurn & !paintOn)
-            {
-                armyDestination = Camera.main.ScreenPointToRay(Input.mousePosition).origin;
-                paintX = (int)System.Math.Round(selectedArmy.transform.position.x / tileSize, 0);
-                paintY = (int)System.Math.Round(selectedArmy.transform.position.y / tileSize, 0);
-                paintMovePresentTile(paintX, paintY, true);
-                paintOn = true;
-            }
-            Debug.Log("Different army selected");
-        }
+
+		Debug.Log("My army." + instance.currentIndex);
+		if (army == selectedArmy)
+		{
+			Debug.Log("Same army selected");
+		}
+		else
+		{
+			instance.selectedArmy = army;
+			armyDestination = Camera.main.ScreenPointToRay(Input.mousePosition).origin;
+			paintX = (int)System.Math.Round(selectedArmy.transform.position.x / tileSize, 0);
+			paintY = (int)System.Math.Round(selectedArmy.transform.position.y / tileSize, 0);
+			Debug.Log(paintX + " " + paintY + " " + instance.tiles[paintX][paintY].whoseBee() + " " + instance.currentIndex );
+			if((instance.tiles[paintX][paintY].whoseBee() == instance.currentIndex)) 
+			{
+				if (paintOn)
+				{
+					paintMovePresentTile(0, 0, false);
+					paintOn = false;
+				}
+				
+				instance.selectDestination = true;
+				if (!paintOn) // myTurn
+				{
+					paintMovePresentTile(paintX, paintY, true);
+					paintOn = true;
+				}
+				Debug.Log("Different army selected " + paintX + " " + paintY);
+			}
+			else {
+				Debug.Log("Not my army.");
+			}
+		}
     }
 	
 	public void turnPass() {
-		Debug.Log("New Player Turn " + currentPlayer);
+		Debug.Log("New Player Turn " + (currentIndex + 1));
 		passTurn = true;
-		turnChange();
+		TurnChange();
 	}
 }
