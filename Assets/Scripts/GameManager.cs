@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour {
 
@@ -18,6 +19,11 @@ public class GameManager : MonoBehaviour {
             owner = own;
             bees = bee;
         }
+		
+		public int whoseBee() 
+		{
+			return owner;
+		}
     }
 
     public class Player
@@ -59,7 +65,14 @@ public class GameManager : MonoBehaviour {
     public static GameManager instance = null;              //Static instance of GameManager which allows it to be accessed by any other script.
     private StartGame startScript;
     public Player player = new Player("Local player 2");
-
+	
+	/* Game UI */
+	
+	//public GameObject CanvasUI;
+	public GameObject buttonPassTurn;
+	public GameObject imageWhosTurn;
+	public GameObject imageWhoseTurnText;
+	
 	/* Game Field Holder */
     private Transform mapHolder;
     private Transform paintHolder;
@@ -94,10 +107,16 @@ public class GameManager : MonoBehaviour {
     private readonly int maxMoveDistance = 3;
     public int myIndex = 0;
     public int currentIndex = 0;
+
     public JSONObject players;
     public JSONObject map;
     public Color[] playerColors = { new Color(0f, 0.4f, 1f), new Color(1f, 0f, 0f), new Color(0f, 1f, 0f), new Color(1f, 0f, 0f), new Color(1f, 1f, 0f), new Color(1f, 1f, 1f) };
+
+    public int playerCount = 4;
+	public Color32[] playerTurnColors = { new Color32(255, 255, 0, 100), new Color32(255, 0, 255, 100), new Color32(0, 255, 0, 100), new Color32(255, 0, 0, 100) };
+
     public int maxBeeCount = 40;
+	public bool passTurn = false;
 
     public List<List<Tile>> tiles;
 
@@ -134,9 +153,24 @@ public class GameManager : MonoBehaviour {
         players = new JSONObject();
         map = new JSONObject();
         tiles = new List<List<Tile>>();
+
         //MapSetup();
+		UISetup();
     }
 
+		
+	void TurnChange() 
+	{
+			IncreaseBeeCount(currentIndex);
+			turnCount = turnCount + 1;
+			currentIndex++;
+			if(currentIndex >= playerCount)
+				currentIndex = 0;
+			imageWhosTurn.GetComponent<Image>().color = playerTurnColors[currentIndex];
+			imageWhoseTurnText.GetComponent<Text>().text = "Whose turn: " + (currentIndex + 1);
+			Debug.Log("SwitchTurn" + (currentIndex + 1));
+	}
+	
     // Update is called once per frame
     void Update()
     {
@@ -159,8 +193,9 @@ public class GameManager : MonoBehaviour {
             currentIndex++;
             currentIndex %= players.Count;
         }
+
 	
-        if (Input.GetButtonDown("Fire2") & myTurn & selectDestination)
+        if (Input.GetButtonDown("Fire2") & selectDestination) // myTurn
         {
             armyDestination = Camera.main.ScreenPointToRay(Input.mousePosition).origin;
 			
@@ -169,6 +204,7 @@ public class GameManager : MonoBehaviour {
             int destY = (int)System.Math.Round(armyDestination.y / tileSize, 0);
             int locX = (int)System.Math.Round(selectedArmy.transform.position.x / tileSize, 0);
             int locY = (int)System.Math.Round(selectedArmy.transform.position.y / tileSize, 0);
+			Debug.Log(destX + " " + destY + " " + locX + " " + locY);
 			
             if (System.Math.Abs(destX - locX) > maxMoveDistance | System.Math.Abs(destY - locY) > maxMoveDistance |
                 destX < 0 | destY < 0 | destX > (columns - 1) | destY > (rows - 1) | (destX == locX & destY == locY))
@@ -187,6 +223,10 @@ public class GameManager : MonoBehaviour {
             }
 			if(!paintOn)
 				paintMovePresentTile(paintX, paintY, false);
+			if(passTurn) {
+				passTurn = false;
+				TurnChange();
+			}
         }
     }
 	
@@ -246,7 +286,7 @@ public class GameManager : MonoBehaviour {
 		//Debug.Log("MakeTempTile to: x: "+x+ " y: "+y);
 		GameObject instance;
 		GameObject toInstantiateTile = MoveToTile;
-        Color tmpColor = playerColors[myIndex];
+        Color tmpColor = playerColors[currentIndex]; //myIndex
         tmpColor.a = 0.4f;
         MoveToTile.GetComponent<SpriteRenderer>().color = tmpColor;
 
@@ -323,6 +363,18 @@ public class GameManager : MonoBehaviour {
             }
         }
     }
+	
+	void UISetup() 
+	{
+
+		//CanvasUI = GameObject.FindGameObjectWithTag("CanvasUI");
+		imageWhosTurn = GameObject.Find("ImageWhosTurn"); //      buttonPassTurn;
+		imageWhoseTurnText = GameObject.Find("ImageWhoseTurnText"); //      buttonPassTurn;
+		buttonPassTurn = GameObject.Find("ButtonPassTurn");
+		imageWhosTurn.GetComponent<Image>().color = playerTurnColors[currentIndex];
+		buttonPassTurn.GetComponent<Button>().onClick.AddListener(turnPass);
+
+	}
 
     //Creates the map
     public void NetworkMapSetup()
@@ -479,12 +531,6 @@ public class GameManager : MonoBehaviour {
             }
         }
     }
-	
-	public void turnChange() 
-	{
-			IncreaseBeeCount(1);
-			turnCount = turnCount + 1;
-	}
 
     public void SelectArmy(GameObject army)
     {
@@ -516,4 +562,10 @@ public class GameManager : MonoBehaviour {
             Debug.Log("Different army selected");
         }
     }
+	
+	public void turnPass() {
+		Debug.Log("New Player Turn " + (currentIndex + 1));
+		passTurn = true;
+		TurnChange();
+	}
 }
