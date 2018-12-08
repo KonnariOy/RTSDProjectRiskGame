@@ -22,7 +22,7 @@ var gameBoard = new Array(columns*rows);
 
 var gameBoard = {}
 var treeInd = 0;
-for (i=0; i<columns*rows; i++) {
+for (var i=0; i<columns*rows; i++) {
     if (treeInd < trees.length) {
         if (i == trees[treeInd]) {
             gameBoard[i] = {"owner":-1, "bees":0, "hasTree":1};
@@ -61,7 +61,7 @@ io.on('connection', function(socket) {
         while (gameBoard[location]["bees"] != 0) {
             location = Math.floor(Math.random() * Math.floor(columns*rows));
         }
-        hasTree = gameBoard[location]["hasTree"]
+        var hasTree = gameBoard[location]["hasTree"]
         gameBoard[location] = {"owner":new_key, "bees":20, "hasTree":hasTree};
         console.log('Creating bees: '+JSON.stringify(gameBoard[location]));            
  
@@ -77,7 +77,7 @@ io.on('connection', function(socket) {
         socket.emit('player connected', data);
         console.log(data.name+' emit: player connected: '+JSON.stringify(data));
         
-        newData = {};
+        var newData = {};
         newData["tiles"] = {}
         newData["tiles"][location] = gameBoard[location];
         newData["turnIndex"] = currentTurnIndex;
@@ -100,7 +100,7 @@ io.on('connection', function(socket) {
             var player = parseInt(data.player);
             if (fromX > -1 && fromX < columns && toX > -1 && toX < columns && fromY > -1 && fromY < rows && toY > -1 && toY < rows) {
                 if (Math.abs(fromX - toX) <= maxMove && Math.abs(fromY - toY) <= maxMove) {
-                    fromIndex = fromX * columns + fromY;
+                    var fromIndex = fromX * columns + fromY;
                     if (gameBoard[fromIndex]["owner"] == player && gameBoard[fromIndex]["bees"] >= bees) {
                         // Move is legal, updating game state
                         gameBoard[fromIndex]["bees"] = gameBoard[fromIndex]["bees"] - bees;
@@ -108,7 +108,7 @@ io.on('connection', function(socket) {
                             gameBoard[fromIndex]["owner"] = -1
                         }
                         
-                        toIndex = toX * columns + toY;
+                        var toIndex = toX * columns + toY;
                         if (gameBoard[toIndex]["owner"] == player) {
                             gameBoard[toIndex]["bees"] = gameBoard[toIndex]["bees"] + bees;
                         } else {
@@ -124,7 +124,7 @@ io.on('connection', function(socket) {
                             }
                         }
                         
-                        newData = {};
+                        var newData = {};
                         newData["tiles"] = {}
                         
                         for (i=0; i<trees.length; i++) {
@@ -153,6 +153,31 @@ io.on('connection', function(socket) {
         //socket.emit('play', currentPlayer);
         
         //socket.broadcast.emit('other player move', currentPlayer);
+    });
+    
+    socket.on('pass turn', function(data) {
+        console.log(JSON.stringify(data)+' recv: pass turn');
+        if (data.index == currentTurnIndex) {
+            currentTurnIndex++;
+            currentTurnIndex = currentTurnIndex % Object.keys(clients).length;
+            newData = {};
+            newData["tiles"] = {}
+            newData["turnIndex"] = currentTurnIndex; 
+ 
+            for (i=0; i<trees.length; i++) {
+                if (gameBoard[trees[i]]["owner"] == currentTurnIndex && gameBoard[trees[i]]["bees"] < treeMax) {
+                    gameBoard[trees[i]]["bees"] = gameBoard[trees[i]]["bees"] + 1;
+                    newData["tiles"][trees[i]] = gameBoard[trees[i]];
+                }
+            }
+ 
+            socket.emit('move ok', newData);
+            console.log('emit: move ok: '+JSON.stringify(newData));
+            socket.broadcast.emit('move ok', newData);
+        } else {
+            console.log("Attempt to pass on wrong turn: player: "+data.index+ " current turn: " +currentTurnIndex);
+        }
+    
     });
     
     // socket.on('disconnect', function() {

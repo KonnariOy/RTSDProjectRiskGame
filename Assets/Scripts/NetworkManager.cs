@@ -57,6 +57,7 @@ public class NetworkManager : MonoBehaviour {
         GameManager.instance.map = socketIOevent.data["map"];
         GameManager.instance.columns = int.Parse(socketIOevent.data["columns"].ToString());
         GameManager.instance.myIndex = int.Parse(socketIOevent.data["myIndex"].ToString());
+        GameManager.instance.player.index = int.Parse(socketIOevent.data["myIndex"].ToString());
         GameManager.instance.currentIndex = int.Parse(socketIOevent.data["turnIndex"].ToString());
         GameManager.instance.rows = int.Parse(socketIOevent.data["rows"].ToString());
         GameManager.instance.NetworkMapSetup();
@@ -106,5 +107,12 @@ public class NetworkManager : MonoBehaviour {
         string data = JsonUtility.ToJson(move);
         socket.Emit("make move", new JSONObject(data));
         Debug.Log("emit make move");
+    }
+
+    public void PassTurn(GameManager.Player player)
+    {
+        string data = JsonUtility.ToJson(player);
+        socket.Emit("pass turn", new JSONObject(data));
+        Debug.Log("emit pass turn");
     }
 }

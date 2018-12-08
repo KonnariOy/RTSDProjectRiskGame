@@ -29,10 +29,12 @@ public class GameManager : MonoBehaviour {
     public class Player
     {
         public string name = "Default player";
+        public int index;
 
-        public Player(string _name)
+        public Player(string _name, int ind)
         {
             name = _name;
+            index = ind;
         }
     }
 
@@ -64,7 +66,7 @@ public class GameManager : MonoBehaviour {
     public int rows = 20;
     public static GameManager instance = null;              //Static instance of GameManager which allows it to be accessed by any other script.
     private StartGame startScript;
-    public Player player = new Player("Local player 2");
+    public Player player = new Player("Local player 2", -1); //TODO: Account creation
 	
 	/* Game UI */
 	
@@ -112,11 +114,9 @@ public class GameManager : MonoBehaviour {
     public JSONObject map;
     public Color[] playerColors = { new Color(0f, 0.4f, 1f), new Color(1f, 0f, 0f), new Color(0f, 1f, 0f), new Color(1f, 0f, 0f), new Color(1f, 1f, 0f), new Color(1f, 1f, 1f) };
 
-    public int playerCount = 4;
 	public Color32[] playerTurnColors = { new Color32(255, 255, 0, 100), new Color32(255, 0, 255, 100), new Color32(0, 255, 0, 100), new Color32(255, 0, 0, 100) };
 
     public int maxBeeCount = 40;
-	public bool passTurn = false;
 
     public List<List<Tile>> tiles;
 
@@ -161,14 +161,8 @@ public class GameManager : MonoBehaviour {
 		
 	void TurnChange() 
 	{
-			IncreaseBeeCount(currentIndex);
-			turnCount = turnCount + 1;
-			currentIndex++;
-			if(currentIndex >= playerCount)
-				currentIndex = 0;
-			imageWhosTurn.GetComponent<Image>().color = playerTurnColors[currentIndex];
-			imageWhoseTurnText.GetComponent<Text>().text = "Whose turn: " + (currentIndex + 1);
-			Debug.Log("SwitchTurn" + (currentIndex + 1));
+			imageWhosTurn.GetComponent<Image>().color = playerColors[currentIndex];
+			imageWhoseTurnText.GetComponent<Text>().text = "Whose Turn: " + currentIndex;
 	}
 	
     // Update is called once per frame
@@ -223,10 +217,6 @@ public class GameManager : MonoBehaviour {
             }
 			if(!paintOn)
 				paintMovePresentTile(paintX, paintY, false);
-			if(passTurn) {
-				passTurn = false;
-				TurnChange();
-			}
         }
     }
 	
@@ -302,68 +292,6 @@ public class GameManager : MonoBehaviour {
 		}
 	}
 	
-	void removeTempTile(int x, int y) {
-		Debug.Log("DestroyTempTile1_3");
-		Destroy(tiles[x][y].paintTile);
-		
-	}
-
-    //Creates the map
-    void MapSetup()
-    {
-        mapHolder = new GameObject("Map").transform;
-        paintHolder = new GameObject("MoveTiles").transform;
-
-        for (int x = 0; x < columns; x++)
-        {
-            tiles.Add(new List<Tile>());
-            for (int y = 0; y < rows; y++)
-            {
-                GameObject toInstantiate = GrassTile;
-
-                //Instantiate the GameObject instance using the prefab chosen for toInstantiate at the Vector3 corresponding to current grid position in loop, cast it to GameObject.
-                GameObject instance =
-                    Instantiate(toInstantiate, new Vector3(x*tileSize, y*tileSize, 0f), Quaternion.identity) as GameObject;
-
-                //Set the parent of our newly instantiated object instance to boardHolder, this is just organizational to avoid cluttering hierarchy.
-                instance.transform.SetParent(mapHolder);
-                tiles[x].Add(new Tile(false,-1,0));
-            }
-        }
-        for (int i = 0; i < treePos.Length/2; i++)
-        {
-            GameObject toInstantiate = TreeTile;
-            {
-                //Instantiate the GameObject instance using the prefab chosen for toInstantiate at the Vector3 corresponding to current grid position in loop, cast it to GameObject.
-                GameObject instance =
-                    Instantiate(toInstantiate, new Vector3(treePos[i,0] * tileSize, treePos[i,1] * tileSize, 0f), Quaternion.identity) as GameObject;
-
-                //Set the parent of our newly instantiated object instance to boardHolder, this is just organizational to avoid cluttering hierarchy.
-                instance.transform.SetParent(mapHolder);
-                tiles[treePos[i, 0]][treePos[i, 1]].hasTree = true;
-            }
-        }
-        for (int i = 0; i < beePos.Length / 2; i++)
-        {
-            GameObject toInstantiate = BeeTile;
-            {
-                //Instantiate the GameObject instance using the prefab chosen for toInstantiate at the Vector3 corresponding to current grid position in loop, cast it to GameObject.
-                GameObject instance =
-                    Instantiate(toInstantiate, new Vector3(beePos[i, 0] * tileSize, beePos[i, 1] * tileSize, 0f), Quaternion.identity) as GameObject;
-                //Set the parent of our newly instantiated object instance to boardHolder, this is just organizational to avoid cluttering hierarchy.
-                //instance.transform.SetParent(mapHolder);
-                tiles[beePos[i, 0]][beePos[i, 1]].bees = 10;
-                tiles[beePos[i, 0]][beePos[i, 1]].beeObject = instance;
-                tiles[beePos[i, 0]][beePos[i, 1]].owner = beeOwners[i];
-                instance.GetComponent<BeeScript>().owner = beeOwners[i];
-                //instance.GetComponent<BeeScript>().countText.color = playerColors[beeOwners[i]];
-                Color tmpColor = playerColors[beeOwners[i]];
-                tmpColor.a = 0.5f;
-                instance.GetComponent<BeeScript>().playerSprite.color = tmpColor;
-            }
-        }
-    }
-	
 	void UISetup() 
 	{
 
@@ -371,7 +299,7 @@ public class GameManager : MonoBehaviour {
 		imageWhosTurn = GameObject.Find("ImageWhosTurn"); //      buttonPassTurn;
 		imageWhoseTurnText = GameObject.Find("ImageWhoseTurnText"); //      buttonPassTurn;
 		buttonPassTurn = GameObject.Find("ButtonPassTurn");
-		imageWhosTurn.GetComponent<Image>().color = playerTurnColors[currentIndex];
+		imageWhosTurn.GetComponent<Image>().color = playerColors[currentIndex];
 		buttonPassTurn.GetComponent<Button>().onClick.AddListener(turnPass);
 
 	}
@@ -508,6 +436,8 @@ public class GameManager : MonoBehaviour {
         {
             myTurn = false;
         }
+
+        TurnChange();
     }
 
 
@@ -564,8 +494,10 @@ public class GameManager : MonoBehaviour {
     }
 	
 	public void turnPass() {
-		Debug.Log("New Player Turn " + (currentIndex + 1));
-		passTurn = true;
-		TurnChange();
+        NetworkManager.instance.PassTurn(player);
+        paintMovePresentTile(0, 0, false);
+        selectDestination = false;
+        paintOn = false;
+        selectedArmy = null;
 	}
 }
