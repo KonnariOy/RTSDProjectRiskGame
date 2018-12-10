@@ -1,12 +1,14 @@
+TODO marked with (-), Done marked with (+)
+
 High priority:
-Remove player from game when out of units.
-Remove player from game when disconnected (or at least from current turn order, so even if disconnected player has units, their turn is skipped).
-Restart game when there is a winner (What is the win condition? Or game goes on forever?).
-Authentication. Based on username or username + password.
++Remove player from game when out of units.
++Remove player from game when disconnected (or at least from current turn order, so even if disconnected player has units, their turn is skipped).
+-Restart game when there is a winner (Win condition = 1 or fewer active players with units).
+-Authentication. Based on username or username + password.
 
 Low priority:
-Action log. Show message for latest events. For example when a new player joins or player is eliminated.
-Player limit handling. 4 player limit?
-Pause game when only 1 player present.
-Divide army into 2 (for example choice to move half of army). Server should support already, needs Unity implementation.
-UI positioning: Currently OK only on some resolutions.
+-Action log. Show message for latest events. For example when a new player joins or player is eliminated.
++Player limit handling. 4 player limit?
++Pause game when only 1 player present.
+-Divide army into 2 (for example choice to move half of army). Server should support already, needs Unity implementation.
+-UI positioning: Currently OK only on some resolutions.

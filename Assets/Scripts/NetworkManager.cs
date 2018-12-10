@@ -32,8 +32,6 @@ public class NetworkManager : MonoBehaviour {
         socket.On("player connected", OnPlayerConnected);
         socket.On("other player connected", OnOtherPlayerConnected);
         socket.On("other player disconnected", OnPlayerDisconnected);
-        socket.On("other player move", OnOtherPlayerMove);
-        socket.On("your turn", OnOtherPlayerMove);
         socket.On("move ok", OnMoveOk);
         FirstConnect();
     }
@@ -53,7 +51,7 @@ public class NetworkManager : MonoBehaviour {
     void OnPlayerConnected(SocketIOEvent socketIOevent)
     {
         GameManager.instance.players = socketIOevent.data["players"];
-        Debug.Log(GameManager.instance.players.Count);
+        Debug.Log(socketIOevent);
         GameManager.instance.map = socketIOevent.data["map"];
         GameManager.instance.columns = int.Parse(socketIOevent.data["columns"].ToString());
         GameManager.instance.myIndex = int.Parse(socketIOevent.data["myIndex"].ToString());
@@ -70,19 +68,11 @@ public class NetworkManager : MonoBehaviour {
         GameManager.instance.players = socketIOevent.data["players"];
         Debug.Log(GameManager.instance.players.Count);
         Debug.Log(socketIOevent.data.ToString());
-        //GameManager.instance.currentIndex = int.Parse(socketIOevent.data["turnIndex"].ToString());
         GameManager.instance.PlayMoveFromServer(socketIOevent.data);
     }
 
 
     void OnPlayerDisconnected(SocketIOEvent socketIOevent)
-    {
-        Debug.Log(socketIOevent.data["1"]);
-        string data = socketIOevent.data.ToString();
-        Debug.Log(data);
-    }
-
-    void OnOtherPlayerMove(SocketIOEvent socketIOevent)
     {
         Debug.Log(socketIOevent.data["1"]);
         string data = socketIOevent.data.ToString();

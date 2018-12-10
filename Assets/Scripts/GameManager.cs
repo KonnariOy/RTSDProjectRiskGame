@@ -67,10 +67,11 @@ public class GameManager : MonoBehaviour {
     public static GameManager instance = null;              //Static instance of GameManager which allows it to be accessed by any other script.
     private StartGame startScript;
     public Player player = new Player("Local player 2", -1); //TODO: Account creation
-	
-	/* Game UI */
-	
-	//public GameObject CanvasUI;
+
+    /* Game UI */
+
+    //public GameObject CanvasUI;
+    public GameObject canvasUI;
 	public GameObject buttonPassTurn;
 	public GameObject imageWhosTurn;
 	public GameObject imageWhoseTurnText;
@@ -155,7 +156,6 @@ public class GameManager : MonoBehaviour {
         tiles = new List<List<Tile>>();
 
         //MapSetup();
-		UISetup();
     }
 
 		
@@ -294,15 +294,15 @@ public class GameManager : MonoBehaviour {
 	
 	void UISetup() 
 	{
-
-		//CanvasUI = GameObject.FindGameObjectWithTag("CanvasUI");
-		imageWhosTurn = GameObject.Find("ImageWhosTurn"); //      buttonPassTurn;
+        canvasUI.SetActive(true);
+        imageWhosTurn = GameObject.Find("ImageWhosTurn"); //      buttonPassTurn;
 		imageWhoseTurnText = GameObject.Find("ImageWhoseTurnText"); //      buttonPassTurn;
-		buttonPassTurn = GameObject.Find("ButtonPassTurn");
+        imageWhoseTurnText.GetComponent<Text>().text = "Whose Turn: " + currentIndex;
+        buttonPassTurn = GameObject.Find("ButtonPassTurn");
 		imageWhosTurn.GetComponent<Image>().color = playerColors[currentIndex];
 		buttonPassTurn.GetComponent<Button>().onClick.AddListener(turnPass);
-
-	}
+        //canvasUI.GetComponent<Renderer>().enabled = true;
+    }
 
     //Creates the map
     public void NetworkMapSetup()
@@ -367,6 +367,7 @@ public class GameManager : MonoBehaviour {
             }
         }
         MapInitialized = true;
+        UISetup();
     }
 
     public void UpdateMapFromServer()
@@ -428,6 +429,7 @@ public class GameManager : MonoBehaviour {
         }
 
         currentIndex = int.Parse(moveData["turnIndex"].ToString());
+        Debug.Log("Current index: " + currentIndex);
         if (currentIndex == myIndex)
         {
             myTurn = true;

@@ -4,39 +4,130 @@ var io = require('socket.io')(server);
 
 server.listen(3000);
 
-// var clients = {
-    // 0: "pena",
-    // 1: "jaska",
-// };
+var clients = {};                       // Joined clients. Structure {"index": {"name":string, "active":bool, "bees":int}}
+var columns = 12;                       // Horizontal (x) dimension of map.
+var rows = 12;                          // Vertical (y) dimension of map.
+var mapsize = columns*rows;             // Total tile count in map.
+var maxMove = 3;                        // Army can move this many tiles in x and y directions.
+var treeMax = 30;                       // Army can only grow to this size in a tree tile.
+var trees = [20,26,65,70,72,111,117];   // Initialize map with trees in these tiles.
+var currentTurnIndex = -1;              // Only player with this index can make a move.
+var maxPlayers = 4;                     // Max for one game instance TODO: Support for multiple game instances.
+var gameBoard = new Array(mapsize);     // Keeps track of owner, bees and trees in all tiles.
+var playerJoined = [];                  // Keeps track of players that need starting armies after joining.
+var minPlayerCount = 2;                 // Game logic is paused when less players are joined.
+var activePlayers = 0;                  // Currently connected players.
 
-var clients = {
-};
+// Initialize map with trees. Set ownership to -1 (no owner) for all tiles.
 
-var columns = 12;
-var rows = 12;
-var maxMove = 3;
-var treeMax = 30;
-var trees = [20,50];
-var currentTurnIndex = 0;
-var gameBoard = new Array(columns*rows);
-
-var gameBoard = {}
-var treeInd = 0;
-for (var i=0; i<columns*rows; i++) {
-    if (treeInd < trees.length) {
-        if (i == trees[treeInd]) {
-            gameBoard[i] = {"owner":-1, "bees":0, "hasTree":1};
-            treeInd++;
-            console.log("Creating tree at: "+i);
+function InitializeBoard() {
+    var treeInd = 0;
+    for (var i=0; i<mapsize; i++) {
+        if (treeInd < trees.length) {
+            if (i == trees[treeInd]) {
+                gameBoard[i] = {"owner":-1, "bees":0, "hasTree":1};
+                treeInd++;
+                console.log("Creating tree at: "+i);
+            } else {
+                gameBoard[i] = {"owner":-1, "bees":0, "hasTree":0};
+            }
         } else {
             gameBoard[i] = {"owner":-1, "bees":0, "hasTree":0};
         }
-    } else {
-        gameBoard[i] = {"owner":-1, "bees":0, "hasTree":0};
     }
 }
 
-//gameBoard[49] = {"owner":0, "bees":100, "hasTree":0};
+function addJoinedPlayers(newData) {
+    // Gives bee armies to new players in stack.
+    while (playerJoined.length > 0) {
+        // Give joining player a starting army in an empty tile
+        var location = Math.floor(Math.random() * Math.floor(mapsize));
+        // TODO: ineffective and can get stuck if every tile has bees
+        while (gameBoard[location]["bees"] != 0) {
+            location = Math.floor(Math.random() * Math.floor(mapsize));
+        }
+        var index = playerJoined.pop()
+        gameBoard[location]["owner"] = index;
+        gameBoard[location]["bees"] = 20;
+        clients[index]["bees"] = 20;
+        newData["tiles"][location] = gameBoard[location];
+        console.log('Creating bees: '+JSON.stringify(gameBoard[location]));
+    }
+}
+
+function increaseTurnIndex() {
+    // Checks whose turn is next and sets currentTurnIndex to that player's index
+    firstActiveClient = true;
+    var firstIndex = -1;
+    for (var key in clients) {
+        if (clients[key]["active"]) {
+            if (firstActiveClient) {
+                firstIndex = key;
+                firstActiveClient = false;
+            }
+            if (key > currentTurnIndex) {
+                currentTurnIndex = parseInt(key);
+                console.log("New turn index: "+key);
+                return;
+            }
+        }
+    }
+    currentTurnIndex = parseInt(firstIndex);
+    console.log("Starting from beginning. New turn index: "+firstIndex);
+}
+
+function passTurn(socket, index) {
+    // Pass turn without making a move, calculate increased bee counts for passing player. 
+    if (index == currentTurnIndex) {
+        newData = {};
+        newData["tiles"] = {};
+        increaseBeeCount(newData);
+        increaseTurnIndex();
+        newData["turnIndex"] = currentTurnIndex; 
+
+        // If new players have joined during this turn, add their army to the map at the end of this turn
+        addJoinedPlayers(newData);
+
+        socket.emit('move ok', newData);
+        console.log('emit: move ok: '+JSON.stringify(newData));
+        socket.broadcast.emit('move ok', newData);
+    } else {
+        // TODO Block passing at client side when it's not your turn
+        console.log("Attempt to pass on wrong turn: player: "+index+ " current turn: " +currentTurnIndex);
+    }
+}
+
+function increaseBeeCount(newData) {
+    // Grow armies at every tree owned by current player
+    for (i=0; i<trees.length; i++) {
+        if (gameBoard[trees[i]]["owner"] == currentTurnIndex && gameBoard[trees[i]]["bees"] < treeMax) {
+            gameBoard[trees[i]]["bees"]++;
+            clients[currentTurnIndex]["bees"]++;
+            newData["tiles"][trees[i]] = gameBoard[trees[i]];
+        }
+    }
+}
+
+function checkWinCondition() {
+    // Checks if fewer than 2 players are active.
+    // If so, declare winner and start a new game.
+    var activeClients = 0;
+    for (key in clients) {
+        if (clients[key]["bees"] <= 0) {
+            console.log("Player "+key+" has been defeated.");
+            clients[key]["active"] = false;
+        }
+        if (clients[key]["active"]) {
+            activeClients++;
+        }
+    }
+    if (activeClients <= 1) {
+        console.log("We have a winner");
+        // TODO Handle restarting game here.
+    }    
+}
+
+InitializeBoard();
 
 app.get('/', function(req, res) {
     res.send('response "/"');
@@ -44,8 +135,15 @@ app.get('/', function(req, res) {
 
 io.on('connection', function(socket) {
     
+    var currentPlayer;
+    
     socket.on('player connect', function(data) {
         console.log(JSON.stringify(data)+' recv: player connect');
+        if (Object.keys(clients).length == maxPlayers) {
+            console.log("Player can't join. Limit reached.");
+            socket.emit('lobby full');
+            return;
+        }
         var new_key = 0;
         for(var key in clients) {
             console.log(clients[key]);
@@ -56,16 +154,29 @@ io.on('connection', function(socket) {
             new_key = Math.max(new_key,parseInt(key)+1);
         }
             
-        // Give joining player a starting army in an empty tile
-        var location = Math.floor(Math.random() * Math.floor(columns*rows));
-        while (gameBoard[location]["bees"] != 0) {
-            location = Math.floor(Math.random() * Math.floor(columns*rows));
-        }
-        var hasTree = gameBoard[location]["hasTree"]
-        gameBoard[location] = {"owner":new_key, "bees":20, "hasTree":hasTree};
-        console.log('Creating bees: '+JSON.stringify(gameBoard[location]));            
+        currentPlayer = new_key;
+        playerJoined.push(new_key); // Joining player is given an army after next turn in 'make move' or now if game paused        
  
-        clients[new_key] = data.name;
+        activePlayers = 0;
+        for (var key in clients) {
+            if (clients[key]["active"]) {
+                console.log("Player " + key + " is active.");
+                activePlayers++;
+            }
+        }
+        
+        clients[new_key] = {"name":data.name, "active":true};
+        
+        var newData = {};
+        newData["tiles"] = {};
+        if (activePlayers < minPlayerCount) {
+            addJoinedPlayers(newData);    
+        }
+        
+        if (currentTurnIndex == -1) {
+            currentTurnIndex = currentPlayer;
+        }
+        
         data = {
             "players": clients,
             "map": gameBoard,
@@ -74,23 +185,34 @@ io.on('connection', function(socket) {
             "myIndex": new_key,
             "turnIndex": currentTurnIndex
         }
-        socket.emit('player connected', data);
-        console.log(data.name+' emit: player connected: '+JSON.stringify(data));
         
-        var newData = {};
-        newData["tiles"] = {}
-        newData["tiles"][location] = gameBoard[location];
+        socket.emit('player connected', data);
+        console.log(currentPlayer+' emit: player connected: '+JSON.stringify(data));
+        
         newData["turnIndex"] = currentTurnIndex;
         newData["players"] = clients;
     
         socket.broadcast.emit('other player connected', newData);
-        console.log(data.name+' broadcast.emit: other player connected: '+JSON.stringify(newData));
+        console.log('broadcast.emit: other player connected: '+JSON.stringify(newData));
                 
     });
     
     socket.on('make move', function(data) {
         // console.log(currentPlayer.name+' recv: play: '+JSON.stringify(data));
         console.log(JSON.stringify(data)+' recv: player move');
+        
+        activePlayers = 0;
+        for (var key in clients) {
+            if (clients[key]["active"]) {
+                console.log("Player " + key + " is active.");
+                activePlayers++;
+            }
+        }
+        if (activePlayers < minPlayerCount) {
+            console.log("Not enough players. Discarding move.");
+            return;
+        }  
+        
         if (data.player == currentTurnIndex) {
             var fromX = parseInt(data.fromX);
             var fromY = parseInt(data.fromY);
@@ -110,9 +232,18 @@ io.on('connection', function(socket) {
                         
                         var toIndex = toX * columns + toY;
                         if (gameBoard[toIndex]["owner"] == player) {
+                            // Combining 2 armies of current player
                             gameBoard[toIndex]["bees"] = gameBoard[toIndex]["bees"] + bees;
                         } else {
+                            // Fighting army of another player
+                            var otherPlayer = gameBoard[toIndex]["owner"];
                             var remainingBees = gameBoard[toIndex]["bees"] - bees;
+                            if (otherPlayer != -1) {
+                                clients[otherPlayer]["bees"] = clients[otherPlayer]["bees"] - Math.min(gameBoard[toIndex]["bees"], bees);
+                                console.log("Player "+otherPlayer+ " bees remaining: "+clients[otherPlayer]["bees"]);
+                            }
+                            clients[player]["bees"] = clients[player]["bees"] - Math.min(gameBoard[toIndex]["bees"], bees);
+                            console.log("Player "+player+ " bees remaining: "+clients[player]["bees"]);
                             if (remainingBees == 0) {
                                 gameBoard[toIndex]["bees"] = 0;
                                 gameBoard[toIndex]["owner"] = -1;
@@ -120,24 +251,22 @@ io.on('connection', function(socket) {
                                 gameBoard[toIndex]["bees"] = -remainingBees;
                                 gameBoard[toIndex]["owner"] = player;
                             }   else {
-                                gameBoard[toIndex]["bees"] = remainingIndex;
+                                gameBoard[toIndex]["bees"] = remainingBees;
                             }
                         }
                         
                         var newData = {};
                         newData["tiles"] = {}
                         
-                        for (i=0; i<trees.length; i++) {
-                            if (gameBoard[trees[i]]["owner"] == currentTurnIndex && gameBoard[trees[i]]["bees"] < treeMax) {
-                                gameBoard[trees[i]]["bees"] = gameBoard[trees[i]]["bees"] + 1;
-                                newData["tiles"][trees[i]] = gameBoard[trees[i]];
-                            }
-                        }
+                        increaseBeeCount(newData);                        
+                        addJoinedPlayers(newData);
                         
                         newData["tiles"][fromIndex] = gameBoard[fromIndex];
                         newData["tiles"][toIndex] = gameBoard[toIndex];
-                        currentTurnIndex++;
-                        currentTurnIndex = currentTurnIndex % Object.keys(clients).length;
+                        
+                        checkWinCondition();
+                        
+                        increaseTurnIndex();
                         newData["turnIndex"] = currentTurnIndex; 
                         
                         socket.emit('move ok', newData);
@@ -150,47 +279,22 @@ io.on('connection', function(socket) {
         } else {
             console.log("Attempt to move on wrong turn: player: "+data.player+ " current turn: " +currentTurnIndex);
         }
-        //socket.emit('play', currentPlayer);
-        
-        //socket.broadcast.emit('other player move', currentPlayer);
     });
     
     socket.on('pass turn', function(data) {
         console.log(JSON.stringify(data)+' recv: pass turn');
-        if (data.index == currentTurnIndex) {
-            currentTurnIndex++;
-            currentTurnIndex = currentTurnIndex % Object.keys(clients).length;
-            newData = {};
-            newData["tiles"] = {}
-            newData["turnIndex"] = currentTurnIndex; 
- 
-            for (i=0; i<trees.length; i++) {
-                if (gameBoard[trees[i]]["owner"] == currentTurnIndex && gameBoard[trees[i]]["bees"] < treeMax) {
-                    gameBoard[trees[i]]["bees"] = gameBoard[trees[i]]["bees"] + 1;
-                    newData["tiles"][trees[i]] = gameBoard[trees[i]];
-                }
-            }
- 
-            socket.emit('move ok', newData);
-            console.log('emit: move ok: '+JSON.stringify(newData));
-            socket.broadcast.emit('move ok', newData);
-        } else {
-            console.log("Attempt to pass on wrong turn: player: "+data.index+ " current turn: " +currentTurnIndex);
-        }
-    
+        passTurn(socket, data.index)
     });
     
-    // socket.on('disconnect', function() {
-        // console.log(currentPlayer.name+' recv: play: '+currentPlayer.name);
-        // for (var i = 0; i < clients.length(); i++ ) {
-            // if (clients[i] == currentPlayer.name) {
-                // delete clients[i];   
-            // }
-        // }
-        
-        // socket.broadcast.emit('other player disconnected', currentPlayer);
-    // });
-
+    socket.on('disconnect', function() {
+        console.log('recv: disconnect player ' + currentPlayer);
+        clients[currentPlayer]["active"] = false;
+        checkWinCondition();
+        if (currentPlayer == currentTurnIndex) {
+            passTurn(socket, currentPlayer)
+        }
+        //socket.broadcast.emit('other player disconnected', currentPlayer);
+    });
 
 });
 
