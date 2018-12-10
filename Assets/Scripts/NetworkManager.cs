@@ -33,6 +33,10 @@ public class NetworkManager : MonoBehaviour {
         socket.On("other player connected", OnOtherPlayerConnected);
         socket.On("other player disconnected", OnPlayerDisconnected);
         socket.On("move ok", OnMoveOk);
+        socket.On("login ok", OnAuthenticationOk);
+        socket.On("login fail", OnAuthenticationFail);
+        socket.On("create_account ok", OnCreateAccountOk);
+        socket.On("create_account fail", OnCreateAccountFail);
         FirstConnect();
     }
 	
@@ -85,9 +89,32 @@ public class NetworkManager : MonoBehaviour {
         GameManager.instance.PlayMoveFromServer(socketIOevent.data);
     }
 
+    void OnAuthenticationOk(SocketIOEvent socketIOevent)
+    {
+        Debug.Log("login ok");
+        FirstConnect();
+    }
+
+    void OnAuthenticationFail(SocketIOEvent socketIOevent)
+    {
+        Debug.Log("login fail");
+    }
+
+    void OnCreateAccountOk(SocketIOEvent socketIOevent)
+    {
+        Debug.Log("create_account ok");
+    }
+
+    void OnCreateAccountFail(SocketIOEvent socketIOevent)
+    {
+        Debug.Log("create_account fail");
+    }
+
+
     public void FirstConnect()
     {
-        string data = JsonUtility.ToJson(GameManager.instance.player);
+        //string data = JsonUtility.ToJson(GameManager.instance.player);
+        string data = JsonUtility.ToJson("abc");
         Debug.Log(data);
         StartCoroutine(ConnectToServer(data));
     }
@@ -104,5 +131,19 @@ public class NetworkManager : MonoBehaviour {
         string data = JsonUtility.ToJson(player);
         socket.Emit("pass turn", new JSONObject(data));
         Debug.Log("emit pass turn");
+    }
+
+    public void LoginRequest(PlayerCredentials cred)
+    {
+        string data = JsonUtility.ToJson(cred);
+        socket.Emit("player login", new JSONObject(data));
+        Debug.Log("emit player login " + data);
+    }
+
+    public void CreateAccountRequest(PlayerCredentials cred)
+    {
+        string data = JsonUtility.ToJson(cred);
+        socket.Emit("player create_account", new JSONObject(data));
+        Debug.Log("emit player create_account " + data);
     }
 }

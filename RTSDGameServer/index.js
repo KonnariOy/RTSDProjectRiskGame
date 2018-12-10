@@ -1,6 +1,7 @@
 var app = require('express')();
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
+var PouchDB = require('pouchdb');
 
 server.listen(3000);
 
@@ -17,6 +18,11 @@ var gameBoard = new Array(mapsize);     // Keeps track of owner, bees and trees 
 var playerJoined = [];                  // Keeps track of players that need starting armies after joining.
 var minPlayerCount = 2;                 // Game logic is paused when less players are joined.
 var activePlayers = 0;                  // Currently connected players.
+var accountDatabase = new PouchDB('accounts');
+var accounts = {
+    foo: "bar",
+    baz: "bax"
+};
 
 // Initialize map with trees. Set ownership to -1 (no owner) for all tiles.
 
@@ -136,6 +142,30 @@ app.get('/', function(req, res) {
 io.on('connection', function(socket) {
     
     var currentPlayer;
+
+    socket.on('player login', function(data) {
+        console.log(JSON.stringify(data) + ' recv: player login');
+        if (accounts.hasOwnProperty(data.username) && accounts[data.username] == data.password) {
+            socket.emit('login ok');
+        } else {
+            socket.emit('login fail');
+        }
+    })
+
+    socket.on('player create_account', function(data) {
+        console.log(JSON.stringify(data) + ' recv: player create_account');
+        accountDatabase.post({
+            username: data.username,
+            password: data.password
+        }, function(err, response) {
+            if (err) {
+                return console.log(err);
+            }
+            if (response) {
+                return console.log(response);
+            }
+        });
+    })
     
     socket.on('player connect', function(data) {
         console.log(JSON.stringify(data)+' recv: player connect');
