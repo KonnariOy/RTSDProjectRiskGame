@@ -47,7 +47,7 @@ public class StartGame : MonoBehaviour {
 
     void InitGameScene()
     {
-        UnityEngine.SceneManagement.SceneManager.LoadScene("GameScene");
+        UnityEngine.SceneManagement.SceneManager.LoadScene("GameScene2");
         MyBarracks = new BarracksObject(3);
     }
 

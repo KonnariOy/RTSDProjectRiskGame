@@ -70,11 +70,14 @@ public class GameManager : MonoBehaviour {
 
     /* Game UI */
 
+	private ActionLog eventLog;
+	
     //public GameObject CanvasUI;
     public GameObject canvasUI;
 	public GameObject buttonPassTurn;
 	public GameObject imageWhosTurn;
 	public GameObject imageWhoseTurnText;
+	public GameObject actionLogWindowText;
 	
 	/* Game Field Holder */
     private Transform mapHolder;
@@ -103,6 +106,8 @@ public class GameManager : MonoBehaviour {
 
     /* Game Logic */
     public bool MapInitialized = false;
+	public string gameWon = "";
+	public bool gameEnd = false;
 	private bool myTurn = false;
     public float tileSize = 0.32f;
     private Vector3 armyDestination;
@@ -438,7 +443,7 @@ public class GameManager : MonoBehaviour {
         {
             myTurn = false;
         }
-
+	//	eventLog.AddEvent("Another Player Moves");
         TurnChange();
     }
 
@@ -501,5 +506,13 @@ public class GameManager : MonoBehaviour {
         selectDestination = false;
         paintOn = false;
         selectedArmy = null;
+	//	eventLog.AddEvent("Pass Turn");
+		if(gameEnd)
+			EndGameScene();
+	}
+	
+	public void EndGameScene() {
+		Debug.Log("end game scene start here");
+		UnityEngine.SceneManagement.SceneManager.LoadScene("EndScene");	
 	}
 }

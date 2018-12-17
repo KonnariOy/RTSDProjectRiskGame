@@ -49,6 +49,7 @@ function addJoinedPlayers(newData) {
         var index = playerJoined.pop()
         gameBoard[location]["owner"] = index;
         gameBoard[location]["bees"] = 20;
+		console.log('Player Num ' + index);
         clients[index]["bees"] = 20;
         newData["tiles"][location] = gameBoard[location];
         console.log('Creating bees: '+JSON.stringify(gameBoard[location]));
@@ -108,7 +109,7 @@ function increaseBeeCount(newData) {
     }
 }
 
-function checkWinCondition() {
+function checkWinCondition(socket) {
     // Checks if fewer than 2 players are active.
     // If so, declare winner and start a new game.
     var activeClients = 0;
@@ -123,7 +124,27 @@ function checkWinCondition() {
     }
     if (activeClients <= 1) {
         console.log("We have a winner");
+		var winner;
         // TODO Handle restarting game here.
+		for (key in clients) {	
+			if(clients[key]["active"] == true)
+				winner = key;
+		}
+		
+        dataa = {
+            "winner": winner,
+            "gameEnd": "true"
+        }
+		console.log(JSON.stringify(dataa))
+		socket.broadcast.emit('game end', dataa); // use data to show lose/win screen text.
+		socket.emit('game end', dataa); // use data to show lose/win screen text.
+		clients = {}; // empty all client server data for a new game.
+		InitializeBoard() // redo board.
+		activePlayers = 0;
+		//let clientObjects = exampleNamespace.connected;
+		//Object.keys(clientObjects).forEach(function (id) {...}
+
+		
     }    
 }
 
@@ -131,12 +152,17 @@ InitializeBoard();
 
 app.get('/', function(req, res) {
     res.send('response "/"');
+	console.log('chrome connect');
 });
 
 io.on('connection', function(socket) {
     
     var currentPlayer;
     
+	socket.on('end', function (){
+		socket.disconnect(0);
+	});
+	
     socket.on('player connect', function(data) {
         console.log(JSON.stringify(data)+' recv: player connect');
         if (Object.keys(clients).length == maxPlayers) {
@@ -264,7 +290,7 @@ io.on('connection', function(socket) {
                         newData["tiles"][fromIndex] = gameBoard[fromIndex];
                         newData["tiles"][toIndex] = gameBoard[toIndex];
                         
-                        checkWinCondition();
+                        checkWinCondition(socket);
                         
                         increaseTurnIndex();
                         newData["turnIndex"] = currentTurnIndex; 
@@ -288,11 +314,24 @@ io.on('connection', function(socket) {
     
     socket.on('disconnect', function() {
         console.log('recv: disconnect player ' + currentPlayer);
-        clients[currentPlayer]["active"] = false;
-        checkWinCondition();
-        if (currentPlayer == currentTurnIndex) {
-            passTurn(socket, currentPlayer)
-        }
+		console.log(JSON.stringify(clients));
+		if(clients.length < 1)
+			;
+		else {
+			try {
+				clients[currentPlayer]["active"] = false;
+				checkWinCondition();
+				if (currentPlayer == currentTurnIndex) {
+					passTurn(socket, currentPlayer)
+				}	
+			}
+			catch(err) {
+				console.log(err + " STUFF ");
+				console.log(console.trace());
+				console.log(" We are in err because no players exists anymore.");
+			}
+
+		}
         //socket.broadcast.emit('other player disconnected', currentPlayer);
     });
 

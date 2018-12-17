@@ -33,6 +33,7 @@ public class NetworkManager : MonoBehaviour {
         socket.On("other player connected", OnOtherPlayerConnected);
         socket.On("other player disconnected", OnPlayerDisconnected);
         socket.On("move ok", OnMoveOk);
+		socket.On("game end", OnGameEnd);
         FirstConnect();
     }
 	
@@ -70,7 +71,18 @@ public class NetworkManager : MonoBehaviour {
         Debug.Log(socketIOevent.data.ToString());
         GameManager.instance.PlayMoveFromServer(socketIOevent.data);
     }
-
+	
+	void OnGameEnd(SocketIOEvent socketIOevent) 
+	{
+		Debug.Log("2222");
+		GameManager.instance.gameWon = socketIOevent.data["winner"].ToString();
+		Debug.Log("2222");
+		GameManager.instance.gameEnd = socketIOevent.data["gameEnd"];
+		Debug.Log("2222");
+		Debug.Log("Win: " + GameManager.instance.gameWon + " end: " + GameManager.instance.gameEnd);
+		GameManager.instance.EndGameScene();
+		socket.Emit("end");
+	}
 
     void OnPlayerDisconnected(SocketIOEvent socketIOevent)
     {
