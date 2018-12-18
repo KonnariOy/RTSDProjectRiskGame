@@ -158,6 +158,7 @@ public class GameManager : MonoBehaviour {
         map = new JSONObject();
         tiles = new List<List<Tile>>();
         selectedBeeCountText.transform.parent.gameObject.SetActive(false);
+        NetworkManager.instance.FirstConnect();
 
         //MapSetup();
     }

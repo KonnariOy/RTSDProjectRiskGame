@@ -68,6 +68,7 @@
     <Compile Include="Assets\Scripts\FetchServerData.cs" />
     <Compile Include="Assets\Scripts\GameManager.cs" />
     <Compile Include="Assets\Scripts\GamePlay.cs" />
+    <Compile Include="Assets\Scripts\LoginMenu.cs" />
     <Compile Include="Assets\Scripts\NetworkManager.cs" />
     <Compile Include="Assets\Scripts\StartGame.cs" />
     <Compile Include="Assets\Scripts\TreeLocationDataObject.cs" />

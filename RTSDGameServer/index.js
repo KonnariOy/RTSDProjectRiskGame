@@ -50,6 +50,7 @@ function addJoinedPlayers(newData) {
         while (gameBoard[location]["bees"] != 0) {
             location = Math.floor(Math.random() * Math.floor(mapsize));
         }
+        console.log("ADDING PLAYER");
         var index = playerJoined.pop()
         gameBoard[location]["owner"] = index;
         gameBoard[location]["bees"] = 20;
@@ -201,7 +202,7 @@ io.on('connection', function(socket) {
     })
     
 	socket.on('end', function (){
-		socket.disconnect(0);
+		//socket.disconnect(0);
 	});
 	
     socket.on('player connect', function(data) {

@@ -25,7 +25,7 @@ public class NetworkManager : MonoBehaviour {
             Destroy(gameObject);
 
         //Sets this to not be destroyed when reloading scene
-        // DontDestroyOnLoad(gameObject);
+        DontDestroyOnLoad(gameObject);
 
     }
     // Use this for initialization
@@ -40,7 +40,7 @@ public class NetworkManager : MonoBehaviour {
         socket.On("create_account ok", OnCreateAccountOk);
         socket.On("create_account fail", OnCreateAccountFail);
 		//socket.On("action log", OnLogActionUpdate);
-        FirstConnect();
+        //FirstConnect();
     }
 	
 	// Update is called once per frame
@@ -85,7 +85,8 @@ public class NetworkManager : MonoBehaviour {
 		Debug.Log("Win: " + GameManager.instance.gameWon + " end: " + GameManager.instance.gameEnd);
 		GameManager.instance.EndGameScene();
 		socket.Emit("end");
-	}
+        authStatus = string.Empty;
+    }
 
     void OnPlayerDisconnected(SocketIOEvent socketIOevent)
     {
@@ -112,7 +113,7 @@ public class NetworkManager : MonoBehaviour {
         Debug.Log("login ok");
         authStatus = "Successfully logged in";
         UnityEngine.SceneManagement.SceneManager.LoadScene("GameScene2");
-        FirstConnect();
+        //FirstConnect();
     }
 
     void OnAuthenticationFail(SocketIOEvent socketIOevent)

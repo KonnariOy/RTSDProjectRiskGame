@@ -40,9 +40,10 @@ namespace SocketIO
 {
 	public class SocketIOComponent : MonoBehaviour
 	{
-		#region Public Properties
+        #region Public Properties
 
-		public string url = "ws://127.0.0.1:4567/socket.io/?EIO=4&transport=websocket";
+        public static SocketIOComponent instance = null;
+        public string url = "ws://127.0.0.1:4567/socket.io/?EIO=4&transport=websocket";
 		public bool autoConnect = true;
 		public int reconnectDelay = 5;
 		public float ackExpirationTime = 1800f;
@@ -117,7 +118,22 @@ namespace SocketIO
 			#if SOCKET_IO_DEBUG
 			if(debugMethod == null) { debugMethod = Debug.Log; };
 			#endif
-		}
+
+            //Check if instance already exists
+            if (instance == null)
+
+                //if not, set instance to this
+                instance = this;
+
+            //If instance already exists and it's not this:
+            else if (instance != this)
+
+                //Then destroy this. This enforces our singleton pattern, meaning there can only ever be one instance of a GameManager.
+                Destroy(gameObject);
+
+            //Sets this to not be destroyed when reloading scene
+            DontDestroyOnLoad(gameObject);
+        }
 
 		public void Start()
 		{
