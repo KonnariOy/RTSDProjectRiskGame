@@ -17,10 +17,12 @@ var gameBoard = new Array(mapsize);     // Keeps track of owner, bees and trees 
 var playerJoined = [];                  // Keeps track of players that need starting armies after joining.
 var minPlayerCount = 2;                 // Game logic is paused when less players are joined.
 var activePlayers = 0;                  // Currently connected players.
+var gameOver = false;
 
 // Initialize map with trees. Set ownership to -1 (no owner) for all tiles.
 
 function InitializeBoard() {
+    gameOver = false;
     var treeInd = 0;
     for (var i=0; i<mapsize; i++) {
         if (treeInd < trees.length) {
@@ -124,8 +126,9 @@ function checkWinCondition(socket) {
         }
     }
     if (activeClients <= 1) {
+        gameOver = true;
         console.log("We have a winner");
-		var winner;
+		var winner = -1;
         // TODO Handle restarting game here.
 		for (key in clients) {	
 			if(clients[key]["active"] == true)
@@ -133,16 +136,16 @@ function checkWinCondition(socket) {
 		}
 		
         dataa = {
-            "winner": winner,
+            "winner": parseInt(winner),
             "gameEnd": "true"
         }
 		console.log(JSON.stringify(dataa))
 		socket.broadcast.emit('game end', dataa); // use data to show lose/win screen text.
 		socket.emit('game end', dataa); // use data to show lose/win screen text.
 		clients = {}; // empty all client server data for a new game.
-		InitializeBoard() // redo board.
+		InitializeBoard(); // redo board.
 		activePlayers = 0;
-		currentTurnIndex = -1;
+        currentTurnIndex = -1;
 		//let clientObjects = exampleNamespace.connected;
 		//Object.keys(clientObjects).forEach(function (id) {...}
 
@@ -318,24 +321,27 @@ io.on('connection', function(socket) {
     
     socket.on('disconnect', function() {
         console.log('recv: disconnect player ' + currentPlayer);
-		console.log(JSON.stringify(clients));
-		if(clients.length < 1)
-			;
-		else {
-			try {
-				clients[currentPlayer]["active"] = false;
-				checkWinCondition();
-				if (currentPlayer == currentTurnIndex) {
-					passTurn(socket, currentPlayer)
-				}	
-			}
-			catch(err) {
-				console.log(err + " STUFF ");
-				console.log(console.trace());
-				console.log(" We are in err because no players exists anymore.");
-			}
+        if (!gameOver)
+        {
+            console.log(JSON.stringify(clients));
+            if(clients.length < 1)
+                ;
+            else {
+                try {
+                    clients[currentPlayer]["active"] = false;
+                    checkWinCondition(socket);
+                    if (currentPlayer == currentTurnIndex) {
+                        passTurn(socket, currentPlayer)
+                    }	
+                }
+                catch(err) {
+                    console.log(err + " STUFF ");
+                    console.log(console.trace());
+                    console.log(" We are in err because no players exists anymore.");
+                }
 
-		}
+            }
+        }
         //socket.broadcast.emit('other player disconnected', currentPlayer);
     });
 

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using System;
 
 public class GameManager : MonoBehaviour {
 
@@ -78,6 +79,7 @@ public class GameManager : MonoBehaviour {
 	public GameObject actionLogWindowText;
 	public GameObject scrollViewObject;
 	public GameObject textContent;
+    public Text selectedBeeCountText;
 	
 	/* Game Field Holder */
     private Transform mapHolder;
@@ -91,14 +93,6 @@ public class GameManager : MonoBehaviour {
 	// Army Script object
 	public GameObject selectedArmy = null;
 	
-	/* Coordinates */
-    int[,] treePos = { { 0, 3 }, { 11, 10 }, { 8, 8 }, { 3, 8 } };
-    int[,] beePos = { { 10, 10 }, {11, 11} , { 7, 4 }, { 6, 10 } };
-    int[] beeOwners = { 0, 0, 1, 3 };
-	int[] treeOwners = { 0, 0, 1 };
-	
-	int[,] tempLayoutPos = {{1,1},{0,0}};
-    
 	/* Move Paint Logic Variables */
 	int paintX;
 	int paintY;
@@ -106,7 +100,7 @@ public class GameManager : MonoBehaviour {
 
     /* Game Logic */
     public bool MapInitialized = false;
-	public string gameWon = "";
+	public int gameWon;
 	public bool gameEnd = false;
 	private bool myTurn = false;
     public float tileSize = 0.32f;
@@ -118,6 +112,7 @@ public class GameManager : MonoBehaviour {
 	public int maxLogSize = 16;
 	public Queue logValues = new Queue();
 	public int pointerForLog = 0;
+    public int selectedBeeCount;
 
     public JSONObject players;
     public JSONObject map;
@@ -145,7 +140,7 @@ public class GameManager : MonoBehaviour {
             Destroy(gameObject);
 
         //Sets this to not be destroyed when reloading scene
-        DontDestroyOnLoad(gameObject);
+        // DontDestroyOnLoad(gameObject);
 
         startScript = GetComponent<StartGame>();
 
@@ -162,9 +157,10 @@ public class GameManager : MonoBehaviour {
         players = new JSONObject();
         map = new JSONObject();
         tiles = new List<List<Tile>>();
+        selectedBeeCountText.transform.parent.gameObject.SetActive(false);
 
         //MapSetup();
-    }
+    }*
 
 	public void insertActionLog(string text) 
 	{
@@ -215,7 +211,29 @@ public class GameManager : MonoBehaviour {
             currentIndex %= players.Count;
         }
 
-	
+        if (Input.GetAxis("Mouse ScrollWheel") != 0f & selectDestination) // myTurn
+        {
+            if (Input.GetAxis("Mouse ScrollWheel") > 0f)
+            {
+                selectedBeeCount = Math.Min(++selectedBeeCount, selectedArmy.GetComponent<BeeScript>().count);
+            } else
+            {
+                selectedBeeCount = Math.Max(--selectedBeeCount, 1);
+            }
+            selectedBeeCountText.text = "Bees selected: " + selectedBeeCount.ToString();
+        }
+
+        if (Input.GetKeyDown(KeyCode.UpArrow) & selectDestination) // myTurn
+        {
+            selectedBeeCount = Math.Min(++selectedBeeCount, selectedArmy.GetComponent<BeeScript>().count);
+            selectedBeeCountText.text = "Bees selected: " + selectedBeeCount.ToString();
+
+        } else if (Input.GetKeyDown(KeyCode.DownArrow) & selectDestination)
+        {
+            selectedBeeCount = Math.Max(--selectedBeeCount, 1);
+            selectedBeeCountText.text = "Bees selected: " + selectedBeeCount.ToString();
+        }
+
         if (Input.GetButtonDown("Fire2") & selectDestination) // myTurn
         {
             armyDestination = Camera.main.ScreenPointToRay(Input.mousePosition).origin;
@@ -237,7 +255,7 @@ public class GameManager : MonoBehaviour {
             }
             else
             {
-                NetworkManager.instance.MakeMove(new Move(myIndex,locX,locY,destX,destY,selectedArmy.GetComponent<BeeScript>().count));
+                NetworkManager.instance.MakeMove(new Move(myIndex,locX,locY,destX,destY,selectedBeeCount));
                 selectDestination = false;
 				paintOn = false;
                 selectedArmy = null;
@@ -416,6 +434,7 @@ public class GameManager : MonoBehaviour {
 
     public void PlayMoveFromServer(JSONObject moveData)
     {
+        selectedBeeCountText.transform.parent.gameObject.SetActive(false);
         JSONObject move = moveData["tiles"];
         for (int i = 0; i < move.Count; i++)
         {
@@ -505,6 +524,7 @@ public class GameManager : MonoBehaviour {
         }
         else
         {
+            selectedBeeCountText.transform.parent.gameObject.SetActive(true);
             if (paintOn)
             {
                 paintMovePresentTile(0, 0, false);

@@ -61,8 +61,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Scripts\ActionLog.cs" />
     <Compile Include="Assets\Scripts\BeeScript.cs" />
     <Compile Include="Assets\Scripts\ChainBlockManager.cs" />
+    <Compile Include="Assets\Scripts\EndGame.cs" />
     <Compile Include="Assets\Scripts\FetchServerData.cs" />
     <Compile Include="Assets\Scripts\GameManager.cs" />
     <Compile Include="Assets\Scripts\GamePlay.cs" />
