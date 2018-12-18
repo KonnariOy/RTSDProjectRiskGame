@@ -23,6 +23,8 @@ public class BeeScript : MonoBehaviour {
         if (owner == GameManager.instance.currentIndex) // myIndex
         {
             GameManager.instance.SelectArmy(gameObject);
+            GameManager.instance.selectedBeeCount = count;
+            GameManager.instance.selectedBeeCountText.text = "Bees selected: "+count.ToString();
             //GameManager.instance.selectedArmy = gameObject;
             //GameManager.instance.selectDestination = true;
         }
