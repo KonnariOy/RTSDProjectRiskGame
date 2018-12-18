@@ -80,7 +80,7 @@ public class NetworkManager : MonoBehaviour {
 	
 	void OnGameEnd(SocketIOEvent socketIOevent) 
 	{
-		GameManager.instance.gameWon = socketIOevent.data["winner"].ToString();
+		int.TryParse(socketIOevent.data["winner"].ToString(), out GameManager.instance.gameWon);
 		GameManager.instance.gameEnd = socketIOevent.data["gameEnd"];
 		Debug.Log("Win: " + GameManager.instance.gameWon + " end: " + GameManager.instance.gameEnd);
 		GameManager.instance.EndGameScene();
