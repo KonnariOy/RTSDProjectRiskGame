@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using System;
 
 public class GameManager : MonoBehaviour {
 
@@ -78,6 +79,7 @@ public class GameManager : MonoBehaviour {
 	public GameObject imageWhosTurn;
 	public GameObject imageWhoseTurnText;
 	public GameObject actionLogWindowText;
+    public Text selectedBeeCountText;
 	
 	/* Game Field Holder */
     private Transform mapHolder;
@@ -107,6 +109,7 @@ public class GameManager : MonoBehaviour {
     private readonly int maxMoveDistance = 3;
     public int myIndex = 0;
     public int currentIndex = 0;
+    public int selectedBeeCount;
 
     public JSONObject players;
     public JSONObject map;
@@ -151,6 +154,7 @@ public class GameManager : MonoBehaviour {
         players = new JSONObject();
         map = new JSONObject();
         tiles = new List<List<Tile>>();
+        selectedBeeCountText.transform.parent.gameObject.SetActive(false);
 
         //MapSetup();
     }
@@ -185,7 +189,29 @@ public class GameManager : MonoBehaviour {
             currentIndex %= players.Count;
         }
 
-	
+        if (Input.GetAxis("Mouse ScrollWheel") != 0f & selectDestination) // myTurn
+        {
+            if (Input.GetAxis("Mouse ScrollWheel") > 0f)
+            {
+                selectedBeeCount = Math.Min(++selectedBeeCount, selectedArmy.GetComponent<BeeScript>().count);
+            } else
+            {
+                selectedBeeCount = Math.Max(--selectedBeeCount, 1);
+            }
+            selectedBeeCountText.text = "Bees selected: " + selectedBeeCount.ToString();
+        }
+
+        if (Input.GetKeyDown(KeyCode.UpArrow) & selectDestination) // myTurn
+        {
+            selectedBeeCount = Math.Min(++selectedBeeCount, selectedArmy.GetComponent<BeeScript>().count);
+            selectedBeeCountText.text = "Bees selected: " + selectedBeeCount.ToString();
+
+        } else if (Input.GetKeyDown(KeyCode.DownArrow) & selectDestination)
+        {
+            selectedBeeCount = Math.Max(--selectedBeeCount, 1);
+            selectedBeeCountText.text = "Bees selected: " + selectedBeeCount.ToString();
+        }
+
         if (Input.GetButtonDown("Fire2") & selectDestination) // myTurn
         {
             armyDestination = Camera.main.ScreenPointToRay(Input.mousePosition).origin;
@@ -207,7 +233,7 @@ public class GameManager : MonoBehaviour {
             }
             else
             {
-                NetworkManager.instance.MakeMove(new Move(myIndex,locX,locY,destX,destY,selectedArmy.GetComponent<BeeScript>().count));
+                NetworkManager.instance.MakeMove(new Move(myIndex,locX,locY,destX,destY,selectedBeeCount));
                 selectDestination = false;
 				paintOn = false;
                 selectedArmy = null;
@@ -383,6 +409,7 @@ public class GameManager : MonoBehaviour {
 
     public void PlayMoveFromServer(JSONObject moveData)
     {
+        selectedBeeCountText.transform.parent.gameObject.SetActive(false);
         JSONObject move = moveData["tiles"];
         for (int i = 0; i < move.Count; i++)
         {
@@ -473,6 +500,7 @@ public class GameManager : MonoBehaviour {
         }
         else
         {
+            selectedBeeCountText.transform.parent.gameObject.SetActive(true);
             if (paintOn)
             {
                 paintMovePresentTile(0, 0, false);
