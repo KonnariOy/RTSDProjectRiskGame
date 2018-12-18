@@ -43,12 +43,10 @@ public class LoginMenu : MonoBehaviour {
 
 		if (GUI.Button(new Rect(Screen.width / 2 + 30, 3 * Screen.height / 4 - 20, Screen.width / 8, Screen.height / 8), "Log in")) {
 			NetworkManager.instance.LoginRequest(new PlayerCredentials(username, password));
-			//if username and password ok play game
 		}
 
 		if (GUI.Button(new Rect(Screen.width / 3, 3 * Screen.height / 4 - 20, Screen.width / 5, Screen.height / 8), "Create\naccount")) {
 			NetworkManager.instance.CreateAccountRequest(new PlayerCredentials(username, password));
-			//create account
 		}
 
 		GUI.Label(new Rect(Screen.width / 3, 35 * Screen.height / 100, Screen.width / 5, Screen.height / 8), "Username");

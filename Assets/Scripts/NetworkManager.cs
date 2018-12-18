@@ -94,6 +94,7 @@ public class NetworkManager : MonoBehaviour {
     {
         Debug.Log("login ok");
         authStatus = "Successfully logged in";
+        UnityEngine.SceneManagement.SceneManager.LoadScene("GameScene2");
         FirstConnect();
     }
 
