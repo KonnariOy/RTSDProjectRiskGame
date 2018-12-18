@@ -5,12 +5,7 @@ using UnityEngine.UI;
 
 public class EndGame : MonoBehaviour {
 
-    //public Texture2D tex;
-    ///public SpriteRenderer sr;
-
     public Text winnerText;
-
-    string currentScene;
 
     bool firstSceneClick = false;
     bool lastSceneClick = false;
@@ -19,6 +14,7 @@ public class EndGame : MonoBehaviour {
     void Start () {
         Debug.Log("starting end scene");
         //this.InitStartScene();
+
         //Sprite mySprite = Sprite.Create(tex, new Rect(0.0f, 0.0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100.0f);
         //sr = gameObject.AddComponent<SpriteRenderer>() as SpriteRenderer;
         //sr.color = new Color(0.9f, 0.9f, 0.9f);

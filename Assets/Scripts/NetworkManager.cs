@@ -35,10 +35,14 @@ public class NetworkManager : MonoBehaviour {
         socket.On("other player disconnected", OnPlayerDisconnected);
         socket.On("move ok", OnMoveOk);
 		socket.On("game end", OnGameEnd);
+<<<<<<< HEAD
         socket.On("login ok", OnAuthenticationOk);
         socket.On("login fail", OnAuthenticationFail);
         socket.On("create_account ok", OnCreateAccountOk);
         socket.On("create_account fail", OnCreateAccountFail);
+=======
+		//socket.On("action log", OnLogActionUpdate);
+>>>>>>> 21269f1c431396d535e420c31c8777864a1af314
         FirstConnect();
     }
 	
@@ -79,11 +83,8 @@ public class NetworkManager : MonoBehaviour {
 	
 	void OnGameEnd(SocketIOEvent socketIOevent) 
 	{
-		Debug.Log("2222");
-		GameManager.instance.gameWon = int.Parse(socketIOevent.data["winner"].ToString());
-		Debug.Log("2222");
+		GameManager.instance.gameWon = socketIOevent.data["winner"].ToString();
 		GameManager.instance.gameEnd = socketIOevent.data["gameEnd"];
-		Debug.Log("2222");
 		Debug.Log("Win: " + GameManager.instance.gameWon + " end: " + GameManager.instance.gameEnd);
 		GameManager.instance.EndGameScene();
 		socket.Emit("end");
@@ -100,7 +101,14 @@ public class NetworkManager : MonoBehaviour {
     {
         Debug.Log("Sent move was legal: "+ socketIOevent.data.ToString());
         GameManager.instance.PlayMoveFromServer(socketIOevent.data);
+		GameManager.instance.insertActionLog(socketIOevent.data["actionLog"].ToString());
     }
+	
+	/*void OnLogActionUpdate(SocketIOEvent socketIOevent) 
+	{
+		string temp = int.Parse(socketIOevent.data["actionLog"].ToString());
+		GameManager.instance.insertActionLog(temp);
+	}*/
 
     void OnAuthenticationOk(SocketIOEvent socketIOevent)
     {

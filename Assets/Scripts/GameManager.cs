@@ -70,8 +70,6 @@ public class GameManager : MonoBehaviour {
     public Player player = new Player("Local player 2", -1); //TODO: Account creation
 
     /* Game UI */
-
-	private ActionLog eventLog;
 	
     //public GameObject CanvasUI;
     public GameObject canvasUI;
@@ -79,6 +77,8 @@ public class GameManager : MonoBehaviour {
 	public GameObject imageWhosTurn;
 	public GameObject imageWhoseTurnText;
 	public GameObject actionLogWindowText;
+	public GameObject scrollViewObject;
+	public GameObject textContent;
     public Text selectedBeeCountText;
 	
 	/* Game Field Holder */
@@ -109,6 +109,9 @@ public class GameManager : MonoBehaviour {
     private readonly int maxMoveDistance = 3;
     public int myIndex = 0;
     public int currentIndex = 0;
+	public int maxLogSize = 16;
+	public Queue logValues = new Queue();
+	public int pointerForLog = 0;
     public int selectedBeeCount;
 
     public JSONObject players;
@@ -157,8 +160,27 @@ public class GameManager : MonoBehaviour {
         selectedBeeCountText.transform.parent.gameObject.SetActive(false);
 
         //MapSetup();
-    }
+    }*
 
+	public void insertActionLog(string text) 
+	{
+		//scrollViewObject.GetComponent<ScrollRect>().verticalNormalizedPosition = 0f;
+		logValues.Enqueue(text);
+		if(logValues.Count > maxLogSize - 1) {
+			logValues.Dequeue();
+		}
+		textContent.GetComponent<Text>().text = buildLog();
+		Canvas.ForceUpdateCanvases();
+	}
+	
+	string buildLog() {
+		string log = "";
+		foreach (string s in logValues)
+		{
+			log += s + " \n";
+		}
+		return log;
+	}
 		
 	void TurnChange() 
 	{
@@ -176,7 +198,7 @@ public class GameManager : MonoBehaviour {
 		
         if (!myTurn & currentIndex == myIndex)
         {
-            Debug.Log("Your turn.");
+            Debug.Log("Your turn."); 
             myTurn = true;
             IncreaseBeeCount(myIndex);
         }
@@ -320,10 +342,13 @@ public class GameManager : MonoBehaviour {
         canvasUI.SetActive(true);
         imageWhosTurn = GameObject.Find("ImageWhosTurn"); //      buttonPassTurn;
 		imageWhoseTurnText = GameObject.Find("ImageWhoseTurnText"); //      buttonPassTurn;
+		textContent = GameObject.Find("TextLog");
+		scrollViewObject = GameObject.Find("ScrollView");
         imageWhoseTurnText.GetComponent<Text>().text = "Whose Turn: " + currentIndex;
         buttonPassTurn = GameObject.Find("ButtonPassTurn");
 		imageWhosTurn.GetComponent<Image>().color = playerColors[currentIndex];
 		buttonPassTurn.GetComponent<Button>().onClick.AddListener(turnPass);
+		logValues.Enqueue("Start Log:\n");
         //canvasUI.GetComponent<Renderer>().enabled = true;
     }
 
@@ -462,7 +487,6 @@ public class GameManager : MonoBehaviour {
         {
             myTurn = false;
         }
-	//	eventLog.AddEvent("Another Player Moves");
         TurnChange();
     }
 
@@ -526,9 +550,6 @@ public class GameManager : MonoBehaviour {
         selectDestination = false;
         paintOn = false;
         selectedArmy = null;
-	//	eventLog.AddEvent("Pass Turn");
-		//if(gameEnd)
-		//	EndGameScene();
 	}
 	
 	public void EndGameScene() {
