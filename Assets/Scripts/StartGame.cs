@@ -27,13 +27,13 @@ public class StartGame : MonoBehaviour {
             firstSceneClick = true;
         }
         if (firstSceneClick) {
-            this.InitGameScene();
+            this.InitLoginScene();
         }
     }
 
-    void InitGameScene()
+    void InitLoginScene()
     {
-        UnityEngine.SceneManagement.SceneManager.LoadScene("GameScene2");
+        UnityEngine.SceneManagement.SceneManager.LoadScene("LoginScene");
     }
 
     void InitStartScene()

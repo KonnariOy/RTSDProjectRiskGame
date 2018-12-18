@@ -160,7 +160,7 @@ public class GameManager : MonoBehaviour {
         selectedBeeCountText.transform.parent.gameObject.SetActive(false);
 
         //MapSetup();
-    }*
+    }
 
 	public void insertActionLog(string text) 
 	{
