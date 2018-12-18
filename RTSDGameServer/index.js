@@ -85,6 +85,7 @@ function passTurn(socket, index) {
         increaseBeeCount(newData);
         increaseTurnIndex();
         newData["turnIndex"] = currentTurnIndex; 
+		newData["actionLog"] = "Pass Turn of Player " + currentTurnIndex;
 
         // If new players have joined during this turn, add their army to the map at the end of this turn
         addJoinedPlayers(newData);
@@ -141,6 +142,7 @@ function checkWinCondition(socket) {
 		clients = {}; // empty all client server data for a new game.
 		InitializeBoard() // redo board.
 		activePlayers = 0;
+		currentTurnIndex = -1;
 		//let clientObjects = exampleNamespace.connected;
 		//Object.keys(clientObjects).forEach(function (id) {...}
 
@@ -289,7 +291,8 @@ io.on('connection', function(socket) {
                         
                         newData["tiles"][fromIndex] = gameBoard[fromIndex];
                         newData["tiles"][toIndex] = gameBoard[toIndex];
-                        
+                        newData["actionLog"] = "Move to " + toIndex + " by player " + currentTurnIndex;
+						
                         checkWinCondition(socket);
                         
                         increaseTurnIndex();
@@ -310,6 +313,7 @@ io.on('connection', function(socket) {
     socket.on('pass turn', function(data) {
         console.log(JSON.stringify(data)+' recv: pass turn');
         passTurn(socket, data.index)
+		//socket.broadcast.emit('action log', "Player" + " pnum" + " pass turn");
     });
     
     socket.on('disconnect', function() {

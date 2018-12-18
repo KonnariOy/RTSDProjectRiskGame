@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class EndGame : MonoBehaviour {
-
+/*
     public Texture2D tex;
     public SpriteRenderer sr;
 
-    string currentScene;
+    string currentScene;*/
 
     bool firstSceneClick = false;
     bool lastSceneClick = false;
@@ -17,11 +17,11 @@ public class EndGame : MonoBehaviour {
 
     void Start () {
         //this.InitStartScene();
-        Sprite mySprite = Sprite.Create(tex, new Rect(0.0f, 0.0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100.0f);
+        /*Sprite mySprite = Sprite.Create(tex, new Rect(0.0f, 0.0f, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100.0f);
         sr = gameObject.AddComponent<SpriteRenderer>() as SpriteRenderer;
         sr.color = new Color(0.9f, 0.9f, 0.9f);
         transform.position = new Vector3(1.5f, 1.5f, 0.0f);
-        sr.sprite = mySprite;
+        sr.sprite = mySprite;*/
     }
 	
 	// Update is called once per frame
