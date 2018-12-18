@@ -1,6 +1,7 @@
 var app = require('express')();
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
+var PouchDB = require('pouchdb');
 
 server.listen(3000);
 
@@ -18,6 +19,7 @@ var playerJoined = [];                  // Keeps track of players that need star
 var minPlayerCount = 2;                 // Game logic is paused when less players are joined.
 var activePlayers = 0;                  // Currently connected players.
 var gameOver = false;
+var accountDatabase = new PouchDB('accounts');
 
 // Initialize map with trees. Set ownership to -1 (no owner) for all tiles.
 
@@ -162,6 +164,40 @@ app.get('/', function(req, res) {
 io.on('connection', function(socket) {
     
     var currentPlayer;
+
+    socket.on('player login', function(data) {
+        console.log(JSON.stringify(data) + ' recv: player login');
+        accountDatabase.get(data.username, function(err, doc) {
+            if (err) {
+                socket.emit('login fail');
+                return console.log(err);
+            } else {
+                if (doc.password == data.password) {
+                    socket.emit('login ok');
+                } else {
+                    socket.emit('login fail');
+                }
+                console.log(doc);
+            }
+        });
+    })
+
+    socket.on('player create_account', function(data) {
+        console.log(JSON.stringify(data) + ' recv: player create_account');
+        accountDatabase.put({
+            _id: data.username,
+            password: data.password
+        }, function(err, response) {
+            if (err) {
+                socket.emit('create_account fail');
+                return console.log(err);
+            }
+            if (response) {
+                socket.emit('create_account ok');
+                return console.log(response);
+            }
+        });
+    })
     
 	socket.on('end', function (){
 		socket.disconnect(0);

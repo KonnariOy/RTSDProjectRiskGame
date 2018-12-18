@@ -7,6 +7,7 @@ public class NetworkManager : MonoBehaviour {
 
     public static NetworkManager instance = null;
     public SocketIOComponent socket;
+    public string authStatus = string.Empty;
 
     //Awake is always called before any Start functions
     void Awake()
@@ -34,6 +35,10 @@ public class NetworkManager : MonoBehaviour {
         socket.On("other player disconnected", OnPlayerDisconnected);
         socket.On("move ok", OnMoveOk);
 		socket.On("game end", OnGameEnd);
+        socket.On("login ok", OnAuthenticationOk);
+        socket.On("login fail", OnAuthenticationFail);
+        socket.On("create_account ok", OnCreateAccountOk);
+        socket.On("create_account fail", OnCreateAccountFail);
         FirstConnect();
     }
 	
@@ -97,6 +102,33 @@ public class NetworkManager : MonoBehaviour {
         GameManager.instance.PlayMoveFromServer(socketIOevent.data);
     }
 
+    void OnAuthenticationOk(SocketIOEvent socketIOevent)
+    {
+        Debug.Log("login ok");
+        authStatus = "Successfully logged in";
+        UnityEngine.SceneManagement.SceneManager.LoadScene("GameScene2");
+        FirstConnect();
+    }
+
+    void OnAuthenticationFail(SocketIOEvent socketIOevent)
+    {
+        Debug.Log("login fail");
+        authStatus = "Failed to log in";
+    }
+
+    void OnCreateAccountOk(SocketIOEvent socketIOevent)
+    {
+        Debug.Log("create_account ok");
+        authStatus = "Account created";
+    }
+
+    void OnCreateAccountFail(SocketIOEvent socketIOevent)
+    {
+        Debug.Log("create_account fail");
+        authStatus = "Failed to create account";
+    }
+
+
     public void FirstConnect()
     {
         string data = JsonUtility.ToJson(GameManager.instance.player);
@@ -116,5 +148,19 @@ public class NetworkManager : MonoBehaviour {
         string data = JsonUtility.ToJson(player);
         socket.Emit("pass turn", new JSONObject(data));
         Debug.Log("emit pass turn");
+    }
+
+    public void LoginRequest(PlayerCredentials cred)
+    {
+        string data = JsonUtility.ToJson(cred);
+        socket.Emit("player login", new JSONObject(data));
+        Debug.Log("emit player login " + data);
+    }
+
+    public void CreateAccountRequest(PlayerCredentials cred)
+    {
+        string data = JsonUtility.ToJson(cred);
+        socket.Emit("player create_account", new JSONObject(data));
+        Debug.Log("emit player create_account " + data);
     }
 }
