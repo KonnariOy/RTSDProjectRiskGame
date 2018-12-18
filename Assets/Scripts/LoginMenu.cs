@@ -18,9 +18,6 @@ public class LoginMenu : MonoBehaviour {
 	private string password = string.Empty;
 
 	private Rect windowRect = new Rect(0, 0, Screen.width, Screen.height);
-	public bool showLoginFailText = False;
-	public bool showAccountCreateOkText = False;
-	public bool showAccountCreateFailText = False;
 	// Use this for initialization
 	void Start ()
 	{
@@ -36,9 +33,7 @@ public class LoginMenu : MonoBehaviour {
 	void OnGUI()
 	{
 		GUI.Window(0, windowRect, WindowFunction, "Login");
-		if (showLoginFailText) {
-			GUI.Label(new Rect(Screen.width / 3, 4 * Screen.height / 5, Screen.width / 5, Screen.height / 8), "Login failed");
-		}
+		GUI.Label(new Rect(Screen.width / 3, 5 * Screen.height / 6, Screen.width / 3, Screen.height / 8), NetworkManager.instance.authStatus);
 	}
 
 	void WindowFunction(int windowId)

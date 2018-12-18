@@ -145,23 +145,33 @@ io.on('connection', function(socket) {
 
     socket.on('player login', function(data) {
         console.log(JSON.stringify(data) + ' recv: player login');
-        if (accounts.hasOwnProperty(data.username) && accounts[data.username] == data.password) {
-            socket.emit('login ok');
-        } else {
-            socket.emit('login fail');
-        }
+        accountDatabase.get(data.username, function(err, doc) {
+            if (err) {
+                socket.emit('login fail');
+                return console.log(err);
+            } else {
+                if (doc.password == data.password) {
+                    socket.emit('login ok');
+                } else {
+                    socket.emit('login fail');
+                }
+                console.log(doc);
+            }
+        });
     })
 
     socket.on('player create_account', function(data) {
         console.log(JSON.stringify(data) + ' recv: player create_account');
-        accountDatabase.post({
-            username: data.username,
+        accountDatabase.put({
+            _id: data.username,
             password: data.password
         }, function(err, response) {
             if (err) {
+                socket.emit('create_account fail');
                 return console.log(err);
             }
             if (response) {
+                socket.emit('create_account ok');
                 return console.log(response);
             }
         });

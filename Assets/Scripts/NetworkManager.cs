@@ -7,6 +7,7 @@ public class NetworkManager : MonoBehaviour {
 
     public static NetworkManager instance = null;
     public SocketIOComponent socket;
+    public string authStatus = string.Empty;
 
     //Awake is always called before any Start functions
     void Awake()
@@ -92,22 +93,26 @@ public class NetworkManager : MonoBehaviour {
     void OnAuthenticationOk(SocketIOEvent socketIOevent)
     {
         Debug.Log("login ok");
+        authStatus = "Successfully logged in";
         FirstConnect();
     }
 
     void OnAuthenticationFail(SocketIOEvent socketIOevent)
     {
         Debug.Log("login fail");
+        authStatus = "Failed to log in";
     }
 
     void OnCreateAccountOk(SocketIOEvent socketIOevent)
     {
         Debug.Log("create_account ok");
+        authStatus = "Account created";
     }
 
     void OnCreateAccountFail(SocketIOEvent socketIOevent)
     {
         Debug.Log("create_account fail");
+        authStatus = "Failed to create account";
     }
 
 
