@@ -91,14 +91,6 @@ public class GameManager : MonoBehaviour {
 	// Army Script object
 	public GameObject selectedArmy = null;
 	
-	/* Coordinates */
-    int[,] treePos = { { 0, 3 }, { 11, 10 }, { 8, 8 }, { 3, 8 } };
-    int[,] beePos = { { 10, 10 }, {11, 11} , { 7, 4 }, { 6, 10 } };
-    int[] beeOwners = { 0, 0, 1, 3 };
-	int[] treeOwners = { 0, 0, 1 };
-	
-	int[,] tempLayoutPos = {{1,1},{0,0}};
-    
 	/* Move Paint Logic Variables */
 	int paintX;
 	int paintY;
@@ -106,7 +98,7 @@ public class GameManager : MonoBehaviour {
 
     /* Game Logic */
     public bool MapInitialized = false;
-	public string gameWon = "";
+	public int gameWon;
 	public bool gameEnd = false;
 	private bool myTurn = false;
     public float tileSize = 0.32f;
@@ -142,7 +134,7 @@ public class GameManager : MonoBehaviour {
             Destroy(gameObject);
 
         //Sets this to not be destroyed when reloading scene
-        DontDestroyOnLoad(gameObject);
+        // DontDestroyOnLoad(gameObject);
 
         startScript = GetComponent<StartGame>();
 
@@ -507,8 +499,8 @@ public class GameManager : MonoBehaviour {
         paintOn = false;
         selectedArmy = null;
 	//	eventLog.AddEvent("Pass Turn");
-		if(gameEnd)
-			EndGameScene();
+		//if(gameEnd)
+		//	EndGameScene();
 	}
 	
 	public void EndGameScene() {

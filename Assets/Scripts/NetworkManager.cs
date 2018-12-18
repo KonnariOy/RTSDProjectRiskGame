@@ -24,7 +24,7 @@ public class NetworkManager : MonoBehaviour {
             Destroy(gameObject);
 
         //Sets this to not be destroyed when reloading scene
-        DontDestroyOnLoad(gameObject);
+        // DontDestroyOnLoad(gameObject);
 
     }
     // Use this for initialization
@@ -75,7 +75,7 @@ public class NetworkManager : MonoBehaviour {
 	void OnGameEnd(SocketIOEvent socketIOevent) 
 	{
 		Debug.Log("2222");
-		GameManager.instance.gameWon = socketIOevent.data["winner"].ToString();
+		GameManager.instance.gameWon = int.Parse(socketIOevent.data["winner"].ToString());
 		Debug.Log("2222");
 		GameManager.instance.gameEnd = socketIOevent.data["gameEnd"];
 		Debug.Log("2222");
